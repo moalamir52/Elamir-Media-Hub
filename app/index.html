@@ -1243,7 +1243,7 @@
     }
 
     // ── Media Card ──
-    function MediaCard({ item, type, catName, isFav, onRemove, onClick, onToggleFav }) {
+    function MediaCard({ item, type, catName, isFav, onRemove, onClick, onToggleFav, autoCheck, checkTriggerToken }) {
       const [imgErr, setImgErr] = useState(false);
       const icon = type==='movie' ? '🎬' : type==='series' ? '📺' : '📡';
       const badgeCls = type==='movie' ? 'cat-badge movie' : type==='series' ? 'cat-badge series' : 'cat-badge live';
@@ -1253,7 +1253,7 @@
       const [checkingHealth, setCheckingHealth] = useState(false);
 
       const handleCheckHealth = async (e) => {
-        e.stopPropagation();
+        if (e) e.stopPropagation();
         setCheckingHealth(true);
         try {
           const r = await apiFetch(`/api/check-stream?id=${item.stream_id}`);
@@ -1269,6 +1269,12 @@
           setCheckingHealth(false);
         }
       };
+
+      useEffect(() => {
+        if (type === 'live' && autoCheck) {
+          handleCheckHealth();
+        }
+      }, [item.stream_id, autoCheck, checkTriggerToken]);
 
       return h('div', {className:'media-card', onClick:()=>onClick(item)},
         h('div', {className:'card-poster'},
@@ -1513,6 +1519,26 @@
       const [mvSlots, setMvSlots] = useState([null, null, null, null]);
       const [mvPickerOpen, setMvPickerOpen] = useState(null);
       const [sortFilter, setSortFilter] = useState('');
+
+      const [autoCheck, setAutoCheck] = useState(() => localStorage.getItem('hub_auto_check') || 'disabled');
+      const [checkTriggerToken, setCheckTriggerToken] = useState(1);
+
+      useEffect(() => {
+        localStorage.setItem('hub_auto_check', autoCheck);
+      }, [autoCheck]);
+
+      useEffect(() => {
+        if (autoCheck === 'disabled') return;
+        const mins = parseInt(autoCheck, 10);
+        if (isNaN(mins)) return;
+
+        const intervalMs = mins * 60 * 1000;
+        const timer = setInterval(() => {
+          setCheckTriggerToken(t => t + 1);
+        }, intervalMs);
+
+        return () => clearInterval(timer);
+      }, [autoCheck]);
 
       const [detailItem, setDetailItem]   = useState(null);
       const [seriesItem, setSeriesItem]   = useState(null);
@@ -2257,6 +2283,19 @@
                     h('div', {className:'save-dir-display', title:saveDir}, saveDir||'Default Downloads'),
                     h('button', {type:'button',className:'btn btn-ghost btn-sm',onClick:handleBrowse}, 'Browse...')
                   )
+                ),
+                h('div', {className:'form-group'},
+                  h('label', {className:'form-label'}, '🔄 Auto Stream Checker (Live TV)'),
+                  h('select', {
+                    className: 'form-input',
+                    value: autoCheck,
+                    onChange: e => setAutoCheck(e.target.value)
+                  },
+                    h('option', { value: 'disabled' }, 'Disabled (معطل)'),
+                    h('option', { value: '1' }, 'Every 1 Minute (كل دقيقة)'),
+                    h('option', { value: '5' }, 'Every 5 Minutes (كل 5 دقائق)'),
+                    h('option', { value: '10' }, 'Every 10 Minutes (كل 10 دقائق)')
+                  )
                 )
               ),
               h('div', null, h('button', {type:'submit',className:'btn btn-indigo'}, '💾 Save Settings')),
@@ -2429,7 +2468,9 @@
                         item, type: 'live',
                         isFav: isFavorite(item.stream_id, 'live'),
                         onToggleFav: () => toggleFavorite(item, 'live'),
-                        onClick: (i) => setDetailItem(i)
+                        onClick: (i) => setDetailItem(i),
+                        autoCheck: autoCheck !== 'disabled',
+                        checkTriggerToken: checkTriggerToken
                       }))
                     )
                   ),
@@ -2536,7 +2577,9 @@
                             onToggleFav: () => toggleFavorite(item, itemType),
                             catName: catNameFor(item),
                             onRemove: activeTab === 'recents' ? () => handleRemoveRecent(item, itemType) : null,
-                            onClick: (i) => { (itemType==='series') ? setSeriesItem(i) : setDetailItem(i); }
+                            onClick: (i) => { (itemType==='series') ? setSeriesItem(i) : setDetailItem(i); },
+                            autoCheck: autoCheck !== 'disabled',
+                            checkTriggerToken: checkTriggerToken
                           });
                         })
                       )
