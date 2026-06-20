@@ -231,8 +231,10 @@ config = {
     "password": "",
     "save_dir": DEFAULT_SAVE_DIR,
     "favorites": [],
-    "recents": []
+    "recents": [],
+    "playback_positions": {}
 }
+
 
 # Cache containers
 CACHED_MOVIES = None
@@ -263,6 +265,9 @@ def load_config():
         config["recents"] = []
     if "library_items" not in config:
         config["library_items"] = []
+    if "playback_positions" not in config:
+        config["playback_positions"] = {}
+
 
     # Normalize domain to remove trailing slashes
     if config["domain"]:
@@ -490,6 +495,38 @@ def clear_persistent_caches():
                 os.remove(os.path.join(cache_dir, file))
             except:
                 pass
+
+def load_cache_stale_check(name):
+    try:
+        filepath = get_cache_filepath(name)
+        if not os.path.exists(filepath):
+            return None, True
+        with open(filepath, 'rb') as f:
+            encoded = f.read()
+        json_str = base64.b64decode(encoded).decode('utf-8')
+        cache_data = json.loads(json_str)
+        age = time.time() - cache_data["timestamp"]
+        # If older than 10 minutes (600s), it is stale
+        return cache_data["data"], (age > 600)
+    except:
+        return None, True
+
+def revalidate_cache_in_background(name, action):
+    def task():
+        print(f"[~] Background revalidation started for {name}...")
+        url = f"{config['domain']}/player_api.php?username={config['username']}&password={config['password']}&action={action}"
+        fresh_data = fetch_json_from_iptv(url)
+        if fresh_data:
+            save_to_persistent_cache(name, fresh_data)
+            global CACHED_MOVIES, CACHED_SERIES, CACHED_LIVE, CACHED_VOD_CATS, CACHED_SERIES_CATS, CACHED_LIVE_CATS
+            if name == "movies": CACHED_MOVIES = fresh_data
+            elif name == "series": CACHED_SERIES = fresh_data
+            elif name == "live": CACHED_LIVE = fresh_data
+            elif name == "vod_cats": CACHED_VOD_CATS = fresh_data
+            elif name == "series_cats": CACHED_SERIES_CATS = fresh_data
+            elif name == "live_cats": CACHED_LIVE_CATS = fresh_data
+            print(f"[+] Background revalidation complete for {name}.")
+    threading.Thread(target=task, daemon=True).start()
 
 # HLS Segment merger and downloader thread with Resume support
 class DownloadThread(threading.Thread):
@@ -896,6 +933,33 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
         elif path == "/api/live":
             self.handle_get_live(query)
             
+        elif path == "/api/playback-position":
+            stream_id = query.get("id", [None])[0]
+            if stream_id:
+                pos_data = config.get("playback_positions", {}).get(stream_id, {})
+                self.send_json(pos_data)
+            else:
+                pos_dict = config.get("playback_positions", {})
+                sorted_pos = sorted(
+                    [{"id": k, **v} for k, v in pos_dict.items()],
+                    key=lambda x: x.get("timestamp", 0),
+                    reverse=True
+                )
+                self.send_json({"items": sorted_pos})
+
+        elif path == "/api/search":
+            search_query = query.get("q", [""])[0].strip().lower()
+            if not search_query:
+                self.send_json({"live": [], "movies": [], "series": []})
+            else:
+                self.handle_global_search(search_query)
+
+        elif path == "/api/check-stream":
+            stream_id = query.get("id", [None])[0]
+            if not stream_id:
+                self.send_error(400, "Missing stream id")
+            else:
+                self.handle_check_stream(stream_id)
 
         elif path == "/api/vod-categories":
             self.handle_get_vod_cats()
@@ -1005,6 +1069,47 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
                 self.send_json({"status": "success"})
             except Exception as e:
                 self.send_error(400, f"Invalid body: {e}")
+
+        elif path == "/api/playback-position":
+            try:
+                data = json.loads(body)
+                stream_id = str(data.get("stream_id"))
+                position = float(data.get("position", 0))
+                duration = float(data.get("duration", 0))
+                title = data.get("title", "")
+                media_type = data.get("type", "movie")
+                stream_icon = data.get("stream_icon", "")
+                
+                if "playback_positions" not in config:
+                    config["playback_positions"] = {}
+                
+                if duration > 0 and (position / duration > 0.95 or (duration - position) < 15):
+                    if stream_id in config["playback_positions"]:
+                        del config["playback_positions"][stream_id]
+                else:
+                    config["playback_positions"][stream_id] = {
+                        "position": position,
+                        "duration": duration,
+                        "title": title,
+                        "type": media_type,
+                        "stream_icon": stream_icon,
+                        "timestamp": int(time.time())
+                    }
+                save_config()
+                self.send_json({"status": "success"})
+            except Exception as e:
+                self.send_error(400, f"Error saving playback position: {e}")
+
+        elif path == "/api/playback-position/delete":
+            try:
+                data = json.loads(body)
+                stream_id = str(data.get("stream_id"))
+                if "playback_positions" in config and stream_id in config["playback_positions"]:
+                    del config["playback_positions"][stream_id]
+                    save_config()
+                self.send_json({"status": "success"})
+            except Exception as e:
+                self.send_error(400, f"Error: {e}")
                 
         elif path == "/api/record":
             # Record a live stream until cancelled
@@ -1445,12 +1550,77 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
         else:
             self.send_error(404, "API endpoint not found")
 
+    # API Logic - Global search across categories
+    def handle_global_search(self, q):
+        global CACHED_LIVE, CACHED_MOVIES, CACHED_SERIES
+        if not CACHED_LIVE:
+            data, _ = load_cache_stale_check("live")
+            CACHED_LIVE = data or []
+        if not CACHED_MOVIES:
+            data, _ = load_cache_stale_check("movies")
+            CACHED_MOVIES = data or []
+        if not CACHED_SERIES:
+            data, _ = load_cache_stale_check("series")
+            CACHED_SERIES = data or []
+
+        live_matches = []
+        movie_matches = []
+        series_matches = []
+        limit = 50
+
+        if CACHED_LIVE:
+            for item in CACHED_LIVE:
+                if q in item.get("name", "").lower():
+                    live_matches.append(item)
+                    if len(live_matches) >= limit:
+                        break
+        if CACHED_MOVIES:
+            for item in CACHED_MOVIES:
+                if q in item.get("name", "").lower():
+                    movie_matches.append(item)
+                    if len(movie_matches) >= limit:
+                        break
+        if CACHED_SERIES:
+            for item in CACHED_SERIES:
+                if q in item.get("name", "").lower():
+                    series_matches.append(item)
+                    if len(series_matches) >= limit:
+                        break
+
+        self.send_json({
+            "live": live_matches,
+            "movies": movie_matches,
+            "series": series_matches
+        })
+
+    # API Logic - Live Stream Status Checker
+    def handle_check_stream(self, stream_id):
+        domain = config.get("domain", "")
+        username = config.get("username", "")
+        password = config.get("password", "")
+        if not (domain and username and password):
+            self.send_json({"online": False})
+            return
+        stream_url = f"{domain.rstrip('/')}/live/{username}/{password}/{stream_id}.ts"
+        req = urllib.request.Request(stream_url, method='GET', headers={'User-Agent': 'Mozilla/5.0'})
+        try:
+            with urllib.request.urlopen(req, timeout=1.8) as response:
+                code = response.getcode()
+                self.send_json({"online": code == 200})
+        except Exception as e:
+            print(f"Stream check error for ID {stream_id}: {e}")
+            self.send_json({"online": False})
+
     # API Logic - Movies list fetch, cache and search
     def handle_get_movies(self, query):
         global CACHED_MOVIES
         if not CACHED_MOVIES:
-            CACHED_MOVIES = load_from_persistent_cache("movies")
-            if not CACHED_MOVIES:
+            data, is_stale = load_cache_stale_check("movies")
+            if data:
+                CACHED_MOVIES = data
+                if is_stale:
+                    revalidate_cache_in_background("movies", "get_vod_streams")
+            else:
                 print("[~] Fetching movies list from IPTV server...")
                 url = f"{config['domain']}/player_api.php?username={config['username']}&password={config['password']}&action=get_vod_streams"
                 CACHED_MOVIES = fetch_json_from_iptv(url)
@@ -1465,6 +1635,7 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
         page      = int(query.get("page",     [1])[0])
         limit     = int(query.get("limit",    [24])[0])
         cat_id    = query.get("category_id",  [""])[0].strip()
+        sort_by   = query.get("sort_by",      [""])[0].strip()
         
         # Filter movies
         filtered = CACHED_MOVIES
@@ -1472,6 +1643,16 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
             filtered = [m for m in filtered if search in m.get('name', '').lower()]
         if cat_id:
             filtered = [m for m in filtered if str(m.get('category_id', '')) == cat_id]
+            
+        # Sort movies
+        if sort_by == "a-z":
+            filtered = sorted(filtered, key=lambda x: x.get("name", "").lower())
+        elif sort_by == "z-a":
+            filtered = sorted(filtered, key=lambda x: x.get("name", "").lower(), reverse=True)
+        elif sort_by == "rating":
+            filtered = sorted(filtered, key=lambda x: float(x.get("rating", 0) or 0), reverse=True)
+        elif sort_by == "recent":
+            filtered = sorted(filtered, key=lambda x: int(x.get("added", 0) or 0), reverse=True)
             
         # Paginate
         total = len(filtered)
@@ -1487,8 +1668,12 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
     def handle_get_series(self, query):
         global CACHED_SERIES
         if not CACHED_SERIES:
-            CACHED_SERIES = load_from_persistent_cache("series")
-            if not CACHED_SERIES:
+            data, is_stale = load_cache_stale_check("series")
+            if data:
+                CACHED_SERIES = data
+                if is_stale:
+                    revalidate_cache_in_background("series", "get_series")
+            else:
                 print("[~] Fetching series list from IPTV server...")
                 url = f"{config['domain']}/player_api.php?username={config['username']}&password={config['password']}&action=get_series"
                 CACHED_SERIES = fetch_json_from_iptv(url)
@@ -1503,6 +1688,7 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
         page      = int(query.get("page",    [1])[0])
         limit     = int(query.get("limit",   [24])[0])
         cat_id    = query.get("category_id", [""])[0].strip()
+        sort_by   = query.get("sort_by",     [""])[0].strip()
         
         # Filter series
         filtered = CACHED_SERIES
@@ -1510,6 +1696,16 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
             filtered = [s for s in filtered if search in s.get('name', '').lower()]
         if cat_id:
             filtered = [s for s in filtered if str(s.get('category_id', '')) == cat_id]
+            
+        # Sort series
+        if sort_by == "a-z":
+            filtered = sorted(filtered, key=lambda x: x.get("name", "").lower())
+        elif sort_by == "z-a":
+            filtered = sorted(filtered, key=lambda x: x.get("name", "").lower(), reverse=True)
+        elif sort_by == "rating":
+            filtered = sorted(filtered, key=lambda x: float(x.get("rating", 0) or 0), reverse=True)
+        elif sort_by == "recent":
+            filtered = sorted(filtered, key=lambda x: int(x.get("last_modified", 0) or 0), reverse=True)
             
         # Paginate
         total = len(filtered)
@@ -1549,8 +1745,12 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
     def handle_get_live(self, query):
         global CACHED_LIVE
         if not CACHED_LIVE:
-            CACHED_LIVE = load_from_persistent_cache("live")
-            if not CACHED_LIVE:
+            data, is_stale = load_cache_stale_check("live")
+            if data:
+                CACHED_LIVE = data
+                if is_stale:
+                    revalidate_cache_in_background("live", "get_live_streams")
+            else:
                 print("[~] Fetching live channels from IPTV server...")
                 url = f"{config['domain']}/player_api.php?username={config['username']}&password={config['password']}&action=get_live_streams"
                 CACHED_LIVE = fetch_json_from_iptv(url) or []
@@ -1579,8 +1779,12 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
     def handle_get_vod_cats(self):
         global CACHED_VOD_CATS
         if not CACHED_VOD_CATS:
-            CACHED_VOD_CATS = load_from_persistent_cache("vod_cats")
-            if not CACHED_VOD_CATS:
+            data, is_stale = load_cache_stale_check("vod_cats")
+            if data:
+                CACHED_VOD_CATS = data
+                if is_stale:
+                    revalidate_cache_in_background("vod_cats", "get_vod_categories")
+            else:
                 print("[~] Fetching VOD categories from IPTV server...")
                 url = f"{config['domain']}/player_api.php?username={config['username']}&password={config['password']}&action=get_vod_categories"
                 CACHED_VOD_CATS = fetch_json_from_iptv(url) or []
@@ -1591,8 +1795,12 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
     def handle_get_series_cats(self):
         global CACHED_SERIES_CATS
         if not CACHED_SERIES_CATS:
-            CACHED_SERIES_CATS = load_from_persistent_cache("series_cats")
-            if not CACHED_SERIES_CATS:
+            data, is_stale = load_cache_stale_check("series_cats")
+            if data:
+                CACHED_SERIES_CATS = data
+                if is_stale:
+                    revalidate_cache_in_background("series_cats", "get_series_categories")
+            else:
                 print("[~] Fetching series categories from IPTV server...")
                 url = f"{config['domain']}/player_api.php?username={config['username']}&password={config['password']}&action=get_series_categories"
                 CACHED_SERIES_CATS = fetch_json_from_iptv(url) or []
@@ -1603,8 +1811,12 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
     def handle_get_live_cats(self):
         global CACHED_LIVE_CATS
         if not CACHED_LIVE_CATS:
-            CACHED_LIVE_CATS = load_from_persistent_cache("live_cats")
-            if not CACHED_LIVE_CATS:
+            data, is_stale = load_cache_stale_check("live_cats")
+            if data:
+                CACHED_LIVE_CATS = data
+                if is_stale:
+                    revalidate_cache_in_background("live_cats", "get_live_categories")
+            else:
                 print("[~] Fetching live categories from IPTV server...")
                 url = f"{config['domain']}/player_api.php?username={config['username']}&password={config['password']}&action=get_live_categories"
                 CACHED_LIVE_CATS = fetch_json_from_iptv(url) or []

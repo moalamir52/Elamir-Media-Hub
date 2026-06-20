@@ -674,6 +674,57 @@
     }
 
     /* EPG UI Styles removed */
+
+    /* ── Continue Watching Row ── */
+    .continue-watching-section { margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem; box-shadow: var(--shadow-sm); }
+    .continue-watching-grid { display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 0.5rem; }
+    .continue-card { position: relative; width: 220px; flex-shrink: 0; background: var(--bg-card2); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.5rem; cursor: pointer; transition: all 0.2s var(--ease); display: flex; flex-direction: column; gap: 0.4rem; }
+    .continue-card:hover { transform: translateY(-2px); border-color: var(--border-indigo); box-shadow: var(--shadow-md); }
+    .continue-poster { position: relative; width: 100%; height: 100px; border-radius: var(--radius-sm); overflow: hidden; background: #000; display: flex; align-items: center; justify-content: center; }
+    .continue-poster img { width: 100%; height: 100%; object-fit: cover; }
+    .continue-poster .fallback-icon { font-size: 2.2rem; }
+    .continue-progress-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 5px; background: rgba(255,255,255,0.24); }
+    .continue-progress-fill { height: 100%; background: var(--indigo); transition: width 0.3s; }
+    .continue-info { display: flex; flex-direction: column; gap: 0.15rem; }
+    .continue-title { font-size: 0.8rem; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .continue-time { font-size: 0.7rem; color: var(--text-sub); font-weight: 600; }
+    .continue-delete-btn { position: absolute; top: -5px; right: -5px; background: var(--red); border: none; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.65rem; cursor: pointer; box-shadow: var(--shadow-sm); font-weight: bold; z-index: 15; }
+    .continue-delete-btn:hover { background: #ff4d4d; }
+
+    /* ── Resume Playback Prompt ── */
+    .resume-prompt-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 360; padding: 1.5rem; text-align: center; }
+    .resume-prompt-box { background: var(--bg-card); border-radius: var(--radius-lg); padding: 1.5rem; max-width: 400px; width: 100%; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; gap: 1rem; }
+    .resume-prompt-box p { font-size: 0.95rem; font-weight: 700; color: var(--text-main); }
+    .resume-buttons { display: flex; gap: 0.75rem; justify-content: center; }
+
+    /* ── Stream Status Dot ── */
+    .status-dot-container { position: absolute; bottom: 0.5rem; left: 0.5rem; display: flex; align-items: center; gap: 0.3rem; z-index: 10; background: rgba(0,0,0,0.6); padding: 0.15rem 0.45rem; border-radius: 999px; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .status-dot.online { background: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
+    .status-dot.offline { background: #e74c3c; box-shadow: 0 0 8px #e74c3c; }
+    .status-dot.checking { background: #f1c40f; box-shadow: 0 0 8px #f1c40f; }
+    .status-dot.unknown { background: #95a5a6; }
+    .status-dot-text { font-size: 0.65rem; color: #fff; font-weight: bold; }
+
+    /* ── Multi-View ── */
+    .multiview-container { display: flex; flex-direction: column; gap: 1rem; width: 100%; height: 100%; min-height: 500px; }
+    .multiview-layout-bar { display: flex; justify-content: space-between; align-items: center; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.75rem; box-shadow: var(--shadow-sm); }
+    .multiview-grid { display: grid; gap: 1rem; width: 100%; flex: 1; }
+    .multiview-grid.layout-2 { grid-template-columns: 1fr 1fr; }
+    .multiview-grid.layout-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+    .multiview-slot { position: relative; background: #000; border: 2px dashed rgba(255,255,255,0.15); border-radius: var(--radius-lg); aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; overflow: hidden; transition: border-color 0.2s; }
+    .multiview-slot.active { border-style: solid; border-color: var(--indigo); }
+    .slot-empty { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; color: rgba(255,255,255,0.4); cursor: pointer; user-select: none; width: 100%; height: 100%; justify-content: center; }
+    .slot-empty:hover { color: #fff; }
+    .slot-empty span { font-size: 2.5rem; }
+    .slot-empty p { font-size: 0.9rem; font-weight: bold; }
+    .multiview-video { width: 100%; height: 100%; object-fit: contain; }
+    .slot-controls { position: absolute; bottom: 0.5rem; right: 0.5rem; display: flex; gap: 0.4rem; z-index: 20; background: rgba(0,0,0,0.6); padding: 0.25rem; border-radius: var(--radius-sm); }
+    .slot-title-tag { position: absolute; top: 0.5rem; left: 0.5rem; z-index: 20; background: rgba(0,0,0,0.7); color: #fff; padding: 0.25rem 0.55rem; border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: bold; max-width: 80%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* ── Global Search view ── */
+    .search-section { margin-bottom: 2rem; }
+    .search-section-title { font-family: var(--font-title); font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.35rem; display: flex; align-items: center; gap: 0.4rem; }
   </style>
 </head>
 
@@ -703,16 +754,32 @@
       return fetch(url, options);
     };
 
+    // Helper to format seconds to HH:MM:SS or MM:SS
+    const formatTime = (seconds) => {
+      if (isNaN(seconds) || seconds === null) return '0:00';
+      const h = Math.floor(seconds / 3600);
+      const m = Math.floor((seconds % 3600) / 60);
+      const s = Math.floor(seconds % 60);
+      return h > 0 
+        ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+        : `${m}:${String(s).padStart(2,'0')}`;
+    };
+
     // ────────────────────────────────────────────────────────────────
     // VideoPlayer — URL is NEVER shown to user (credentials protected)
     // ────────────────────────────────────────────────────────────────
-    function VideoPlayer({ title, url, streamId, isLive, downloads, onRecord, onCancelRecord, onClose, onNext, onPrev, hasNext, hasPrev }) {
+    function VideoPlayer({ title, url, streamId, isLive, downloads, onRecord, onCancelRecord, onClose, onNext, onPrev, hasNext, hasPrev, activeTab }) {
       const videoRef = useRef(null);
       const hlsRef   = useRef(null);
       const [status, setStatus] = useState('loading');
       const [errMsg, setErrMsg]  = useState('');
       const [showArrows, setShowArrows] = useState(false);
       const mouseTimerRef = useRef(null);
+
+      // Playback resume states
+      const [resumePos, setResumePos] = useState(0);
+      const [hasPrompted, setHasPrompted] = useState(false);
+      const lastSavedRef = useRef(0);
 
       const activeRec = downloads ? downloads.find(d => d.id && d.id.startsWith('rec_') && d.status === 'downloading' && (d.filename.includes(title) || d.filename.includes(String(streamId)))) : null;
 
@@ -739,6 +806,18 @@
         };
       }, []);
 
+      // Fetch saved position on mount
+      useEffect(() => {
+        if (isLive || !streamId) return;
+        apiFetch(`/api/playback-position?id=${streamId}`)
+          .then(r => r.json())
+          .then(data => {
+            if (data && data.position > 10) {
+              setResumePos(data.position);
+            }
+          }).catch(()=>{});
+      }, [streamId, isLive]);
+
       useEffect(() => {
         const video = videoRef.current;
         if (!video || !url) return;
@@ -749,11 +828,17 @@
           hlsRef.current = hls;
           hls.loadSource(url);
           hls.attachMedia(video);
-          hls.on(Hls.Events.MANIFEST_PARSED, () => { setStatus('playing'); video.play().catch(()=>{}); });
+          hls.on(Hls.Events.MANIFEST_PARSED, () => { 
+            setStatus('playing'); 
+            video.play().catch(()=>{}); 
+          });
           hls.on(Hls.Events.ERROR, (_, data) => { if (data.fatal) { setStatus('error'); setErrMsg(`Stream error (${data.type})`); } });
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
           video.src = url;
-          video.addEventListener('loadedmetadata', () => { setStatus('playing'); video.play().catch(()=>{}); });
+          video.addEventListener('loadedmetadata', () => { 
+            setStatus('playing'); 
+            video.play().catch(()=>{}); 
+          });
           video.addEventListener('error', () => { setStatus('error'); setErrMsg('Native playback failed.'); });
         } else {
           setStatus('error');
@@ -767,7 +852,6 @@
           const video = videoRef.current;
           if (!video) return;
 
-          // Ignore shortcut if typing in inputs
           const active = document.activeElement;
           if (active && (active.tagName === 'INPUT' || active.tagName === 'SELECT' || active.tagName === 'TEXTAREA')) {
             return;
@@ -809,9 +893,30 @@
         return () => document.removeEventListener('keydown', handleKeyDown);
       }, [onClose, isLive, onNext, onPrev, hasNext, hasPrev]);
 
+      // Throttle progress saving on timeupdate
+      const handleTimeUpdate = () => {
+        const video = videoRef.current;
+        if (!video || isLive || !streamId) return;
+        const cur = video.currentTime;
+        const dur = video.duration;
+        if (Math.abs(cur - lastSavedRef.current) > 5) {
+          lastSavedRef.current = cur;
+          apiFetch('/api/playback-position', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              stream_id: String(streamId),
+              position: cur,
+              duration: dur || 0,
+              title: title,
+              type: activeTab === 'series' ? 'series' : 'movie'
+            })
+          }).catch(()=>{});
+        }
+      };
+
       return h('div', { className: 'player-backdrop', onMouseMove: handleMouseMove, onMouseLeave: handleMouseLeave },
         h('div', { className: 'player-header' },
-          // Title only — URL/credentials are intentionally hidden
           h('div', { className: 'player-title' }, '▶ ' + title),
           h('button', { className: 'btn btn-ghost btn-sm', style:{color:'#fff',background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.2)'}, onClick: onClose }, '✕ Close')
         ),
@@ -828,7 +933,8 @@
           ),
           h('video', {
             ref: videoRef, className: 'player-video', controls: true,
-            style: { display: status === 'error' ? 'none' : 'block' }
+            style: { display: status === 'error' ? 'none' : 'block' },
+            onTimeUpdate: handleTimeUpdate
           }),
           showArrows && hasPrev && onPrev && h('button', {
             className: 'player-nav-arrow player-nav-prev',
@@ -839,7 +945,31 @@
             className: 'player-nav-arrow player-nav-next',
             onClick: (e) => { e.stopPropagation(); onNext(); },
             title: 'Next'
-          }, '›')
+          }, '›'),
+
+          // Playback resume overlay
+          resumePos > 0 && !hasPrompted && h('div', { className: 'resume-prompt-overlay' },
+            h('div', { className: 'resume-prompt-box' },
+              h('p', null, `Do you want to resume "${title}" from ${formatTime(resumePos)}?`),
+              h('div', { className: 'resume-buttons' },
+                h('button', { className: 'btn btn-indigo btn-sm', onClick: () => {
+                  if (videoRef.current) videoRef.current.currentTime = resumePos;
+                  setHasPrompted(true);
+                  setResumePos(0);
+                }}, 'Yes, Resume'),
+                h('button', { className: 'btn btn-ghost btn-sm', onClick: () => {
+                  setHasPrompted(true);
+                  setResumePos(0);
+                  // Clear position
+                  apiFetch('/api/playback-position/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ stream_id: String(streamId) })
+                  }).catch(()=>{});
+                }}, 'Start Over')
+              )
+            )
+          )
         ),
         isLive && h('div', {
           style: {
@@ -1113,10 +1243,32 @@
     }
 
     // ── Media Card ──
-    function MediaCard({ item, type, catName, isFav, onToggleFav, onRemove, onClick }) {
+    function MediaCard({ item, type, catName, isFav, onRemove, onClick, onToggleFav }) {
       const [imgErr, setImgErr] = useState(false);
       const icon = type==='movie' ? '🎬' : type==='series' ? '📺' : '📡';
       const badgeCls = type==='movie' ? 'cat-badge movie' : type==='series' ? 'cat-badge series' : 'cat-badge live';
+
+      // Stream checker states
+      const [streamHealth, setStreamHealth] = useState(null); // 'online', 'offline', null
+      const [checkingHealth, setCheckingHealth] = useState(false);
+
+      const handleCheckHealth = async (e) => {
+        e.stopPropagation();
+        setCheckingHealth(true);
+        try {
+          const r = await apiFetch(`/api/check-stream?id=${item.stream_id}`);
+          if (r.ok) {
+            const d = await r.json();
+            setStreamHealth(d.online ? 'online' : 'offline');
+          } else {
+            setStreamHealth('offline');
+          }
+        } catch(err) {
+          setStreamHealth('offline');
+        } finally {
+          setCheckingHealth(false);
+        }
+      };
 
       return h('div', {className:'media-card', onClick:()=>onClick(item)},
         h('div', {className:'card-poster'},
@@ -1129,6 +1281,21 @@
           ),
           type === 'live' && h('div', {className:'live-badge'}, h('div',{className:'live-dot'}), 'LIVE'),
           type === 'live' && item.num && h('div', {className:'ch-num'}, `#${item.num}`),
+          
+          // Stream Checker UI on Live cards
+          type === 'live' && h('div', {
+            className: 'status-dot-container',
+            onClick: handleCheckHealth,
+            title: 'Click to check channel status'
+          },
+            checkingHealth 
+              ? h('div', { className: 'status-dot checking' }) 
+              : h('div', { className: `status-dot ${streamHealth || 'unknown'}` }),
+            h('span', { className: 'status-dot-text' }, 
+              checkingHealth ? 'Checking...' : streamHealth === 'online' ? 'Online' : streamHealth === 'offline' ? 'Offline' : 'Check'
+            )
+          ),
+
           onRemove && h('button', {
             className: 'remove-recent-btn',
             onClick: (e) => { e.stopPropagation(); onRemove(); },
@@ -1174,6 +1341,149 @@
       );
     }
 
+    // ── Multi-View player slot ──
+    function MultiViewPlayer({ slotIdx, channel, creds, onRemove }) {
+      const videoRef = useRef(null);
+      const hlsRef = useRef(null);
+      const [isMuted, setIsMuted] = useState(true);
+      const [volume, setVolume] = useState(1);
+      const [status, setStatus] = useState('loading');
+
+      const streamUrl = getApiUrl(`/api/stream?url=${encodeURIComponent(`${creds.domain}/live/${creds.username}/${creds.password}/${channel.stream_id}.m3u8`)}`);
+
+      useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+        const cleanup = () => {
+          if (hlsRef.current) {
+            hlsRef.current.destroy();
+            hlsRef.current = null;
+          }
+        };
+
+        if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+          const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
+          hlsRef.current = hls;
+          hls.loadSource(streamUrl);
+          hls.attachMedia(video);
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            setStatus('playing');
+            video.play().catch(()=>{});
+          });
+          hls.on(Hls.Events.ERROR, (_, data) => {
+            if (data.fatal) {
+              setStatus('error');
+            }
+          });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          video.src = streamUrl;
+          video.addEventListener('loadedmetadata', () => {
+            setStatus('playing');
+            video.play().catch(()=>{});
+          });
+          video.addEventListener('error', () => {
+            setStatus('error');
+          });
+        } else {
+          setStatus('error');
+        }
+
+        return cleanup;
+      }, [streamUrl]);
+
+      useEffect(() => {
+        const video = videoRef.current;
+        if (video) {
+          video.muted = isMuted;
+          video.volume = volume;
+        }
+      }, [isMuted, volume]);
+
+      return h('div', { style: { width: '100%', height: '100%', position: 'relative', background: '#000' } },
+        h('div', { className: 'slot-title-tag' }, channel.name),
+        status === 'loading' && h('div', { style: { position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.6)', background: 'rgba(0,0,0,0.5)' } },
+          h('div', { className: 'spinner', style: { width: '24px', height: '24px', borderWidth: '2px', borderTopColor: 'white' } })
+        ),
+        status === 'error' && h('div', { style: { position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#e74c3c', background: '#000', padding: '1rem', fontSize: '0.8rem' } },
+          h('span', { style: { fontSize: '1.5rem', marginBottom: '0.25rem' } }, '⚠️'),
+          'Playback failed'
+        ),
+        h('video', {
+          ref: videoRef,
+          className: 'multiview-video',
+          playsInline: true,
+          autoPlay: true,
+          muted: isMuted
+        }),
+        h('div', { className: 'slot-controls' },
+          h('button', {
+            className: 'btn btn-ghost btn-sm',
+            style: { padding: '0.2rem 0.4rem', fontSize: '0.7rem', color: '#fff', background: isMuted ? 'rgba(231, 76, 60, 0.7)' : 'rgba(46, 204, 113, 0.7)', border: 'none' },
+            onClick: () => setIsMuted(!isMuted)
+          }, isMuted ? '🔇 Muted' : '🔊 Unmuted'),
+          h('button', {
+            className: 'btn btn-ghost btn-sm',
+            style: { padding: '0.2rem 0.4rem', fontSize: '0.7rem', color: '#fff', background: 'rgba(0,0,0,0.5)', border: 'none' },
+            onClick: onRemove
+          }, '✕ Remove')
+        )
+      );
+    }
+
+    // ── Multi-View Channel Picker Modal ──
+    function ChannelPickerModal({ onClose, onSelect, creds }) {
+      const [channels, setChannels] = useState([]);
+      const [search, setSearch] = useState('');
+      const [loading, setLoading] = useState(true);
+
+      useEffect(() => {
+        apiFetch('/api/live?limit=300')
+          .then(r => r.json())
+          .then(d => {
+            setChannels(d.channels || []);
+          })
+          .catch(()=>{})
+          .finally(()=>setLoading(false));
+      }, []);
+
+      const filtered = channels.filter(ch => ch.name && ch.name.toLowerCase().includes(search.toLowerCase()));
+
+      return h('div', { className: 'modal-backdrop', onClick: onClose },
+        h('div', { className: 'modal-box', onClick: e => e.stopPropagation(), style: { maxWidth: '600px' } },
+          h('div', { style: { padding: '1rem 1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'between', alignItems: 'center' } },
+            h('h3', { style: { fontFamily: 'var(--font-title)', fontWeight: 700 } }, 'Select Live Channel'),
+            h('button', { className: 'btn btn-ghost btn-sm', onClick: onClose, style: { marginLeft: 'auto' } }, '✕')
+          ),
+          h('div', { style: { padding: '0.75rem 1.5rem', background: 'var(--bg-base)' } },
+            h('div', { className: 'search-wrap', style: { maxWidth: 'none' } },
+              h('span', { className: 'search-icon' }, '🔍'),
+              h('input', {
+                className: 'search-input',
+                type: 'text',
+                placeholder: 'Search channel name...',
+                value: search,
+                onChange: e => setSearch(e.target.value)
+              })
+            )
+          ),
+          h('div', { style: { padding: '1rem 1.5rem', overflowY: 'auto', maxHeight: '400px', display: 'flex', flexDirection: 'column', gap: '0.5rem' } },
+            loading && h('div', { style: { display: 'flex', justifyContent: 'center', padding: '2rem' } }, h('div', { className: 'spinner' })),
+            !loading && filtered.length === 0 && h('p', { style: { color: 'var(--text-dim)', textAlign: 'center' } }, 'No channels found.'),
+            !loading && filtered.map(ch => h('div', {
+              key: ch.stream_id,
+              style: { display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0.75rem', background: 'var(--bg-card2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', cursor: 'pointer' },
+              onClick: () => onSelect(ch)
+            },
+              ch.stream_icon
+                ? h('img', { src: ch.stream_icon, style: { width: '32px', height: '32px', objectFit: 'contain', background: '#000', borderRadius: '4px' }, onError: e => e.target.style.display='none' })
+                : h('span', null, '📡'),
+              h('span', { style: { fontSize: '0.85rem', fontWeight: 600 } }, ch.name)
+            ))
+          )
+        )
+      );
+    }
+
     // ────────────────────────────────────────────────────────────────
     // Main App
     // ────────────────────────────────────────────────────────────────
@@ -1195,6 +1505,14 @@
       const [cats, setCats]           = useState({});
       const [catFilter, setCatFilter] = useState('');
       const [catOptions, setCatOptions] = useState([]);
+
+      // Premium features state
+      const [continueWatching, setContinueWatching] = useState([]);
+      const [searchResults, setSearchResults] = useState({live:[], movies:[], series:[]});
+      const [mvLayout, setMvLayout] = useState('4');
+      const [mvSlots, setMvSlots] = useState([null, null, null, null]);
+      const [mvPickerOpen, setMvPickerOpen] = useState(null);
+      const [sortFilter, setSortFilter] = useState('');
 
       const [detailItem, setDetailItem]   = useState(null);
       const [seriesItem, setSeriesItem]   = useState(null);
@@ -1248,7 +1566,8 @@
           title: playConfig.title,
           url: playConfig.url,
           streamId: playConfig.streamId,
-          isLive: playConfig.isLive
+          isLive: playConfig.isLive,
+          streamIcon: playConfig.streamIcon
         });
         setActivePlaylistIndex(index);
         
@@ -1305,7 +1624,21 @@
         loadCats();
       }, [activeTab]);
 
-      useEffect(() => { fetchMedia(); }, [activeTab, debSearch, page, catFilter]);
+      useEffect(() => { fetchMedia(); }, [activeTab, debSearch, page, catFilter, sortFilter]);
+
+      const fetchContinueWatching = async () => {
+        try {
+          const r = await apiFetch('/api/playback-position');
+          if (r.ok) {
+            const d = await r.json();
+            setContinueWatching(d.items || []);
+          }
+        } catch(e) {}
+      };
+
+      useEffect(() => {
+        fetchContinueWatching();
+      }, [activeTab, playerState]);
 
       const fetchCreds = async () => {
         try {
@@ -1435,18 +1768,19 @@
             streamId,
             isLive,
             type,
-            rawItem: item
+            rawItem: item,
+            streamIcon: item.stream_icon
           }];
           setActivePlaylist(fallbackPlaylist);
           setActivePlaylistIndex(0);
         }
 
-        setPlayerState({ title, url, streamId, isLive });
+        setPlayerState({ title, url, streamId, isLive, streamIcon: item.stream_icon });
       };
 
       const loadCats = async () => {
         try {
-          if (activeTab === 'favorites' || activeTab === 'recents' || activeTab === 'library') {
+          if (['favorites', 'recents', 'library', 'search', 'multiview'].includes(activeTab)) {
             setCats({}); setCatOptions([]);
             return;
           }
@@ -1465,7 +1799,30 @@
         setTotal(0);
         setLoading(true);
         try {
-          if (activeTab === 'favorites' || activeTab === 'recents' || activeTab === 'library') {
+          if (activeTab === 'search') {
+            if (!debSearch) {
+              setSearchResults({live:[], movies:[], series:[]});
+              setItems([]);
+              setTotal(0);
+              setTotalPages(1);
+              setLoading(false);
+              return;
+            }
+            const r = await apiFetch(`/api/search?q=${encodeURIComponent(debSearch)}`);
+            if (r.ok) {
+              const d = await r.json();
+              setSearchResults(d);
+              const totalMatches = (d.live?.length || 0) + (d.movies?.length || 0) + (d.series?.length || 0);
+              setTotal(totalMatches);
+              setTotalPages(1);
+            } else {
+              setSearchResults({live:[], movies:[], series:[]});
+            }
+          } else if (activeTab === 'multiview') {
+            setItems([]);
+            setTotal(0);
+            setTotalPages(1);
+          } else if (activeTab === 'favorites' || activeTab === 'recents' || activeTab === 'library') {
             const endpoint = activeTab === 'library' ? '/api/library' : `/api/${activeTab}`;
             const r = await apiFetch(endpoint);
             if (r.ok) {
@@ -1491,6 +1848,9 @@
             const ep = activeTab==='movies' ? 'movies' : activeTab==='series' ? 'series' : 'live';
             const params = new URLSearchParams({query:debSearch, page, limit:LIMIT});
             if (catFilter) params.set('category_id', catFilter);
+            if (sortFilter && (activeTab === 'movies' || activeTab === 'series')) {
+              params.set('sort_by', sortFilter);
+            }
             const r = await apiFetch(`/api/${ep}?${params}`);
             if (r.ok) { 
               const d = await r.json(); 
@@ -1814,23 +2174,42 @@
           ),
           h('div', {className:'nav-row-2'},
             h('div', {className:'nav-tabs'},
-              h('button', {className:`nav-tab ${activeTab==='movies'?'active':''}`, onClick:()=>{setActiveTab('movies');setPage(1);setSearch('');}}, '🎬 Movies'),
-              h('button', {className:`nav-tab ${activeTab==='series'?'active':''}`, onClick:()=>{setActiveTab('series');setPage(1);setSearch('');}}, '📺 TV Shows'),
-              h('button', {className:`nav-tab live-tab ${activeTab==='live'?'active':''}`, onClick:()=>{setActiveTab('live');setPage(1);setSearch('');}},
+              h('button', {className:`nav-tab ${activeTab==='movies'?'active':''}`, onClick:()=>{setActiveTab('movies');setPage(1);setSearch('');setSortFilter('');}}, '🎬 Movies'),
+              h('button', {className:`nav-tab ${activeTab==='series'?'active':''}`, onClick:()=>{setActiveTab('series');setPage(1);setSearch('');setSortFilter('');}}, '📺 TV Shows'),
+              h('button', {className:`nav-tab live-tab ${activeTab==='live'?'active':''}`, onClick:()=>{setActiveTab('live');setPage(1);setSearch('');setSortFilter('');}},
                 h('div', {className:'live-dot'}), 'Live TV'
               ),
-              h('button', {className:`nav-tab ${activeTab==='favorites'?'active':''}`, onClick:()=>{setActiveTab('favorites');setPage(1);setSearch('');}}, '❤️ Favorites'),
-              h('button', {className:`nav-tab ${activeTab==='recents'?'active':''}`, onClick:()=>{setActiveTab('recents');setPage(1);setSearch('');}}, '🕒 Recent'),
-              h('button', {className:`nav-tab ${activeTab==='library'?'active':''}`, onClick:()=>{setActiveTab('library');setPage(1);setSearch('');}}, '📂 My Library')
+              h('button', {className:`nav-tab ${activeTab==='favorites'?'active':''}`, onClick:()=>{setActiveTab('favorites');setPage(1);setSearch('');setSortFilter('');}}, '❤️ Favorites'),
+              h('button', {className:`nav-tab ${activeTab==='recents'?'active':''}`, onClick:()=>{setActiveTab('recents');setPage(1);setSearch('');setSortFilter('');}}, '🕒 Recent'),
+              h('button', {className:`nav-tab ${activeTab==='library'?'active':''}`, onClick:()=>{setActiveTab('library');setPage(1);setSearch('');setSortFilter('');}}, '📂 My Library'),
+              h('button', {className:`nav-tab ${activeTab==='search'?'active':''}`, onClick:()=>{setActiveTab('search');setPage(1);setSearch('');setSortFilter('');}}, '🔍 Global Search'),
+              h('button', {className:`nav-tab ${activeTab==='multiview'?'active':''}`, onClick:()=>{setActiveTab('multiview');setPage(1);setSearch('');setSortFilter('');}}, '🖥️ Multi-View')
             ),
             h('div', {className:'nav-search-filter', style:{margin:0}},
-              h('div', {className:'search-wrap'},
+              activeTab !== 'multiview' && h('div', {className:'search-wrap'},
                 h('span', {className:'search-icon'}, '🔍'),
-                h('input', {className:'search-input',type:'text',placeholder:`Search ${activeTab==='live'?'channels':activeTab}...`,value:search,onChange:e=>setSearch(e.target.value)})
+                h('input', {
+                  className:'search-input',
+                  type:'text',
+                  placeholder: activeTab === 'search' ? 'Search movies, series, channels...' : `Search ${activeTab==='live'?'channels':activeTab}...`,
+                  value:search,
+                  onChange:e=>setSearch(e.target.value)
+                })
               ),
               catOptions.length > 0 && h('select', {className:'cat-select',value:catFilter,onChange:e=>{setCatFilter(e.target.value);setPage(1);}},
                 h('option', {value:''}, 'All Categories'),
                 catOptions.map(c => h('option', {key:c.category_id, value:String(c.category_id)}, c.category_name))
+              ),
+              (activeTab === 'movies' || activeTab === 'series') && h('select', {
+                className: 'cat-select',
+                value: sortFilter,
+                onChange: e => { setSortFilter(e.target.value); setPage(1); }
+              },
+                h('option', { value: '' }, 'Default Sort'),
+                h('option', { value: 'a-z' }, 'Name A-Z'),
+                h('option', { value: 'z-a' }, 'Name Z-A'),
+                h('option', { value: 'rating' }, 'Highest Rating'),
+                h('option', { value: 'recent' }, 'Recently Added')
               )
             )
           )
@@ -1903,17 +2282,117 @@
                   onClick: handleUpdate
                 }, updating ? 'Updating...' : 'Check for Updates')
               ),
+              h('div', {
+                style: {
+                  borderTop: '1px solid var(--border)',
+                  paddingTop: '1rem',
+                  marginTop: '1rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }
+              },
+                h('div', null,
+                  h('h4', {style:{fontSize:'0.85rem',fontWeight:700}}, '🧹 Data & Cache Management'),
+                  h('p', {style:{fontSize:'0.72rem',color:'var(--text-sub)'}}, 'Clear locally cached channels, movies, and series lists to force a fresh reload.')
+                ),
+                h('button', {
+                  type: 'button',
+                  className: 'btn btn-ghost btn-sm',
+                  style: { color: 'var(--indigo)', borderColor: 'var(--border-indigo)' },
+                  onClick: async () => {
+                    try {
+                      const r = await apiFetch('/api/creds', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(creds)
+                      });
+                      if (r.ok) {
+                        toast('Cache cleared successfully! Reloading lists...', 'success');
+                        setTimeout(() => {
+                          setPage(1);
+                          loadCats();
+                          fetchMedia();
+                        }, 500);
+                      } else {
+                        toast('Failed to clear cache', 'error');
+                      }
+                    } catch (e) {
+                      toast('Error clearing cache', 'error');
+                    }
+                  }
+                }, 'Clear Cache')
+              ),
 
             )
           ),
 
 
 
+          // Continue Watching Row
+          continueWatching.length > 0 && ['movies', 'series', 'favorites', 'recents'].includes(activeTab) && h('div', { className: 'continue-watching-section' },
+            h('h3', { style: { fontFamily: 'var(--font-title)', fontWeight: 700, fontSize: '1rem', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' } }, '🕒 Continue Watching'),
+            h('div', { className: 'continue-watching-grid' },
+              continueWatching.map(cw => {
+                const pct = cw.duration > 0 ? (cw.position / cw.duration) * 100 : 0;
+                return h('div', {
+                  key: cw.id,
+                  className: 'continue-card',
+                  onClick: () => {
+                    let streamUrl = '';
+                    if (cw.type === 'movie') {
+                      streamUrl = getApiUrl(`/api/stream?url=${encodeURIComponent(`${creds.domain}/movie/${creds.username}/${creds.password}/${cw.id}.m3u8`)}`);
+                    } else if (cw.type === 'series') {
+                      streamUrl = getApiUrl(`/api/stream?url=${encodeURIComponent(`${creds.domain}/series/${creds.username}/${creds.password}/${cw.id}.m3u8`)}`);
+                    }
+                    if (streamUrl) {
+                      setPlayerState({
+                        title: cw.title,
+                        url: streamUrl,
+                        streamId: cw.id,
+                        isLive: false,
+                        streamIcon: cw.stream_icon
+                      });
+                    }
+                  }
+                },
+                  h('button', {
+                    className: 'continue-delete-btn',
+                    title: 'Remove progress',
+                    onClick: (e) => {
+                      e.stopPropagation();
+                      apiFetch('/api/playback-position/delete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ stream_id: String(cw.id) })
+                      }).then(() => {
+                        fetchContinueWatching();
+                        toast('Playback position deleted', 'success');
+                      });
+                    }
+                  }, '✕'),
+                  h('div', { className: 'continue-poster' },
+                    cw.stream_icon
+                      ? h('img', { src: cw.stream_icon, onError: (e) => { e.target.style.display = 'none'; } })
+                      : h('span', { className: 'fallback-icon' }, cw.type === 'movie' ? '🎬' : '📺'),
+                    h('div', { className: 'continue-progress-bar' },
+                      h('div', { className: 'continue-progress-fill', style: { width: `${pct}%` } })
+                    )
+                  ),
+                  h('div', { className: 'continue-info' },
+                    h('span', { className: 'continue-title' }, cw.title),
+                    h('span', { className: 'continue-time' }, `${formatTime(cw.position)} / ${formatTime(cw.duration)}`)
+                  )
+                );
+              })
+            )
+          ),
+
           // Section Header
-          h('div', {className:'section-bar'},
+          activeTab !== 'multiview' && h('div', {className:'section-bar'},
             h('div', null,
               h('h2', {className:'section-title'},
-                activeTab==='movies' ? '🎬 Movies' : activeTab==='series' ? '📺 TV Shows' : activeTab==='live' ? '📡 Live TV' : activeTab==='favorites' ? '❤️ Favorites' : activeTab==='library' ? '📂 My Library' : '🕒 Recent Watch History'
+                activeTab==='movies' ? '🎬 Movies' : activeTab==='series' ? '📺 TV Shows' : activeTab==='live' ? '📡 Live TV' : activeTab==='favorites' ? '❤️ Favorites' : activeTab==='library' ? '📂 My Library' : activeTab === 'search' ? '🔍 Global Search' : '🕒 Recent Watch History'
               ),
               total > 0 && h('span', {className:'section-count'}, `${total.toLocaleString()} items found`)
             ),
@@ -1929,37 +2408,141 @@
             }, '🗑️ Clear History')
           ),
 
-          // Grid or List
-          loading
-            ? h('div', {className:'spinner-wrap'}, h('div',{className:'spinner'}), h('p',{className:'spinner-label'},'Loading...'))
-            : items.length > 0
-              ? activeTab === 'library'
-                ? h('div', {className:'library-list'},
-                    items.map(item => h(LibraryItem, {
-                      key: item.name,
-                      item,
-                      onWatch: () => handleWatchLibrary(item),
-                      onDelete: () => handleDeleteLibrary(item),
-                      onClear: () => handleClearLibrary(item)
-                    }))
+          // Grid or List or Custom Views
+          activeTab === 'search'
+            ? h('div', { className: 'search-view' },
+                !debSearch && h('div', { className: 'empty-state' },
+                  h('span', { className: 'empty-state-icon' }, '🔍'),
+                  h('p', null, 'Type in the search box to query movies, series, and channels globally.')
+                ),
+                debSearch && loading && h('div', { className: 'spinner-wrap' }, h('div', { className: 'spinner' }), h('p', { className: 'spinner-label' }, 'Searching...')),
+                debSearch && !loading && (searchResults.live?.length === 0 && searchResults.movies?.length === 0 && searchResults.series?.length === 0) && h('div', { className: 'empty-state' },
+                  h('span', { className: 'empty-state-icon' }, '🔍'),
+                  h('p', null, `No results found for "${debSearch}"`)
+                ),
+                debSearch && !loading && h('div', { style: { display: 'flex', flexDirection: 'column', gap: '2rem' } },
+                  searchResults.live?.length > 0 && h('div', { className: 'search-section' },
+                    h('h3', { className: 'search-section-title' }, '📡 Live Channels'),
+                    h('div', { className: 'media-grid' },
+                      searchResults.live.map(item => h(MediaCard, {
+                        key: `live_${item.stream_id}`,
+                        item, type: 'live',
+                        isFav: isFavorite(item.stream_id, 'live'),
+                        onToggleFav: () => toggleFavorite(item, 'live'),
+                        onClick: (i) => setDetailItem(i)
+                      }))
+                    )
+                  ),
+                  searchResults.movies?.length > 0 && h('div', { className: 'search-section' },
+                    h('h3', { className: 'search-section-title' }, '🎬 Movies'),
+                    h('div', { className: 'media-grid' },
+                      searchResults.movies.map(item => h(MediaCard, {
+                        key: `movie_${item.stream_id}`,
+                        item, type: 'movie',
+                        isFav: isFavorite(item.stream_id, 'movie'),
+                        onToggleFav: () => toggleFavorite(item, 'movie'),
+                        onClick: (i) => setDetailItem(i)
+                      }))
+                    )
+                  ),
+                  searchResults.series?.length > 0 && h('div', { className: 'search-section' },
+                    h('h3', { className: 'search-section-title' }, '📺 TV Series'),
+                    h('div', { className: 'media-grid' },
+                      searchResults.series.map(item => h(MediaCard, {
+                        key: `series_${item.series_id}`,
+                        item, type: 'series',
+                        isFav: isFavorite(item.series_id, 'series'),
+                        onToggleFav: () => toggleFavorite(item, 'series'),
+                        onClick: (i) => setSeriesItem(i)
+                      }))
+                    )
                   )
-                : h('div', {className:'media-grid'},
-                    items.map((item, idx) => {
-                      const itemType = activeTab==='movies'?'movie':activeTab==='series'?'series':activeTab==='live'?'live':(item.type || 'unknown');
-                      const itemId = item.stream_id || item.series_id || item.id || `idx_${idx}`;
-                      return h(MediaCard, {
-                        key: `${itemType}_${itemId}`,
-                        item, type: itemType,
-                        isFav: isFavorite(itemId, itemType),
-                        onToggleFav: () => toggleFavorite(item, itemType),
-                        catName: catNameFor(item),
-                        onRemove: activeTab === 'recents' ? () => handleRemoveRecent(item, itemType) : null,
-                        onClick: (i) => { (itemType==='series') ? setSeriesItem(i) : setDetailItem(i); }
-                      });
+                )
+              )
+            : activeTab === 'multiview'
+              ? h('div', { className: 'multiview-container' },
+                  h('div', { className: 'multiview-layout-bar' },
+                    h('div', { style: { display: 'flex', gap: '0.5rem', alignItems: 'center' } },
+                      h('span', { style: { fontWeight: 600, fontSize: '0.9rem' } }, 'Layout:'),
+                      h('button', {
+                        className: `btn btn-sm ${mvLayout === '2' ? 'btn-indigo' : 'btn-ghost'}`,
+                        onClick: () => setMvLayout('2')
+                      }, 'Side-by-Side (2 slots)'),
+                      h('button', {
+                        className: `btn btn-sm ${mvLayout === '4' ? 'btn-indigo' : 'btn-ghost'}`,
+                        onClick: () => setMvLayout('4')
+                      }, 'Quad Screen (4 slots)')
+                    ),
+                    h('button', {
+                      className: 'btn btn-ghost btn-sm',
+                      style: { color: 'var(--red)', borderColor: 'var(--red)' },
+                      onClick: () => setMvSlots([null, null, null, null])
+                    }, '🧹 Clear All Slots')
+                  ),
+                  h('div', { className: `multiview-grid layout-${mvLayout}` },
+                    (mvLayout === '2' ? [0, 1] : [0, 1, 2, 3]).map(slotIdx => {
+                      const channel = mvSlots[slotIdx];
+                      return h('div', { key: slotIdx, className: `multiview-slot ${channel ? 'active' : ''}` },
+                        channel
+                          ? h(MultiViewPlayer, {
+                              slotIdx,
+                              channel,
+                              creds,
+                              onRemove: () => {
+                                const newSlots = [...mvSlots];
+                                newSlots[slotIdx] = null;
+                                setMvSlots(newSlots);
+                              }
+                            })
+                          : h('div', { className: 'slot-empty', onClick: () => setMvPickerOpen(slotIdx) },
+                              h('span', null, '➕'),
+                              h('p', null, `Click to Add Channel to Slot ${slotIdx + 1}`)
+                            )
+                      );
                     })
-                  )
-              : h('div', {className:'empty-state'}, h('span',{className:'empty-state-icon'},'📂'), h('p',null, activeTab === 'library' ? 'Your local library is empty.' : `No ${activeTab} found.`)),
-          h(Pagination, {page, pages:totalPages, total, onPage:setPage})
+                  ),
+                  mvPickerOpen !== null && h(ChannelPickerModal, {
+                    creds,
+                    onClose: () => setMvPickerOpen(null),
+                    onSelect: (ch) => {
+                      const newSlots = [...mvSlots];
+                      newSlots[mvPickerOpen] = ch;
+                      setMvSlots(newSlots);
+                      setMvPickerOpen(null);
+                    }
+                  })
+                )
+              : loading
+                ? h('div', {className:'spinner-wrap'}, h('div',{className:'spinner'}), h('p',{className:'spinner-label'},'Loading...'))
+                : items.length > 0
+                  ? activeTab === 'library'
+                    ? h('div', {className:'library-list'},
+                        items.map(item => h(LibraryItem, {
+                          key: item.name,
+                          item,
+                          onWatch: () => handleWatchLibrary(item),
+                          onDelete: () => handleDeleteLibrary(item),
+                          onClear: () => handleClearLibrary(item)
+                        }))
+                      )
+                    : h('div', {className:'media-grid'},
+                        items.map((item, idx) => {
+                          const itemType = activeTab==='movies'?'movie':activeTab==='series'?'series':activeTab==='live'?'live':(item.type || 'unknown');
+                          const itemId = item.stream_id || item.series_id || item.id || `idx_${idx}`;
+                          return h(MediaCard, {
+                            key: `${itemType}_${itemId}`,
+                            item, type: itemType,
+                            isFav: isFavorite(itemId, itemType),
+                            onToggleFav: () => toggleFavorite(item, itemType),
+                            catName: catNameFor(item),
+                            onRemove: activeTab === 'recents' ? () => handleRemoveRecent(item, itemType) : null,
+                            onClick: (i) => { (itemType==='series') ? setSeriesItem(i) : setDetailItem(i); }
+                          });
+                        })
+                      )
+                  : h('div', {className:'empty-state'}, h('span',{className:'empty-state-icon'},'📂'), h('p',null, activeTab === 'library' ? 'Your local library is empty.' : `No ${activeTab} found.`)),
+          
+          !['search', 'multiview'].includes(activeTab) && h(Pagination, {page, pages:totalPages, total, onPage:setPage})
         ),
 
         // ── Download Bar (Fixed, always visible) ──
@@ -1998,7 +2581,8 @@
                 streamId: itmId,
                 isLive: itmType === 'live',
                 type: itmType,
-                rawItem: itm
+                rawItem: itm,
+                streamIcon: itm.stream_icon
               };
             });
             
@@ -2028,7 +2612,8 @@
                 isLive: false,
                 type: 'series',
                 rawItem: ep,
-                parentItem: seriesItem
+                parentItem: seriesItem,
+                streamIcon: seriesItem.stream_icon
               };
             });
             
@@ -2044,12 +2629,14 @@
         playerState && h(VideoPlayer, {
           title:playerState.title, url:playerState.url,
           streamId:playerState.streamId, isLive:playerState.isLive,
+          streamIcon: playerState.streamIcon,
           downloads:downloads, onRecord:handleRecord, onCancelRecord:handleCancelDownload,
           onClose:()=>setPlayerState(null),
           onNext: playNext,
           onPrev: playPrev,
           hasNext: activePlaylist && activePlaylist.length > 1,
-          hasPrev: activePlaylist && activePlaylist.length > 1
+          hasPrev: activePlaylist && activePlaylist.length > 1,
+          activeTab: activeTab
         })
       );
     }
