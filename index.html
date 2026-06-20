@@ -1498,6 +1498,7 @@
       const [saveDir, setSaveDir]   = useState('');
       const [showSettings, setShowSettings] = useState(false);
       const [editCreds, setEditCreds] = useState({domain:'',username:'',password:''});
+      const settingsRef = useRef(null);
 
       const [activeTab, setActiveTab] = useState('movies');
       const [search, setSearch]       = useState('');
@@ -1665,6 +1666,50 @@
       useEffect(() => {
         fetchContinueWatching();
       }, [activeTab, playerState]);
+
+      const autoSaveIfNeeded = async () => {
+        if (editCreds.username !== creds.username || editCreds.password !== creds.password || editCreds.domain !== creds.domain) {
+          try {
+            const r = await apiFetch('/api/creds', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(editCreds)
+            });
+            if (r.ok) {
+              toast('Settings saved automatically! ✓', 'success');
+              await fetchCreds();
+              setPage(1);
+              fetchMedia();
+            }
+          } catch (e) {
+            toast('Failed to auto-save settings', 'error');
+          }
+        }
+      };
+
+      const toggleSettings = () => {
+        if (showSettings) {
+          autoSaveIfNeeded();
+          setShowSettings(false);
+        } else {
+          setShowSettings(true);
+        }
+      };
+
+      useEffect(() => {
+        const handleClickOutside = (event) => {
+          if (!showSettings) return;
+          if (settingsRef.current && !settingsRef.current.contains(event.target)) {
+            if (event.target.closest('.nav-actions button') || event.target.closest('.btn-ghost')) {
+              return;
+            }
+            setShowSettings(false);
+            autoSaveIfNeeded();
+          }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+      }, [showSettings, editCreds, creds]);
 
       const fetchCreds = async () => {
         try {
@@ -2193,7 +2238,7 @@
                 }
               }, `📅 Expiry: ${creds.exp_date}`),
               activeDls.length > 0 && h('span', {style:{fontSize:'0.8rem',fontWeight:700,color:'var(--indigo)',padding:'0.3rem 0.6rem',background:'hsla(242,80%,58%,0.1)',borderRadius:'var(--radius-md)',marginRight:'0.5rem'}},`⬇ ${activeDls.length}`),
-              h('button', {className:'btn btn-ghost btn-sm', onClick:()=>setShowSettings(!showSettings)},
+              h('button', {className:'btn btn-ghost btn-sm', onClick:toggleSettings},
                 showSettings ? '✕ Close' : '⚙️ Settings'
               )
             )
@@ -2245,7 +2290,7 @@
         h('div', {className:`page-content${downloads.length>0?' has-dl-bar':''}`, style:{flex:1}},
 
           // Settings Panel
-          showSettings && h('div', {className:'settings-panel'},
+          showSettings && h('div', {ref: settingsRef, className:'settings-panel'},
             h('form', {onSubmit:handleSaveCreds},
               h('div', {style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'0.75rem'}},
                 h('h3', {style:{fontFamily:'var(--font-title)',fontWeight:700,fontSize:'1.05rem'}}, '⚙️ Settings'),
