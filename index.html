@@ -1,0 +1,2060 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📡</text></svg>" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Elamir Media Hub — by Mohamed Elamir</title>
+  <meta name="description" content="Premium IPTV streaming & downloader platform by Mohamed Elamir. Watch live TV, movies, and series directly in your browser." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.min.js"></script>
+
+  <style>
+    :root {
+      /* ── Light Colorful Premium Theme ── */
+      --bg-deep:    hsl(220, 30%, 98%);
+      --bg-base:    hsl(220, 25%, 95%);
+      --bg-card:    #ffffff;
+      --bg-card2:   hsl(220, 20%, 96%);
+      --bg-input:   hsl(220, 25%, 96%);
+
+      --indigo:     hsl(242, 80%, 58%);
+      --indigo-glow: hsla(242, 80%, 58%, 0.25);
+      --gold:       hsl(43, 95%, 45%);
+      --gold-dark:  hsl(38, 90%, 36%);
+      --gold-glow:  hsla(43, 95%, 45%, 0.22);
+      --cyan:       hsl(196, 85%, 38%);
+      --cyan-glow:  hsla(196, 85%, 38%, 0.2);
+      --red:        hsl(4, 82%, 52%);
+      --red-glow:   hsla(4, 82%, 52%, 0.22);
+      --green:      hsl(152, 62%, 38%);
+      --purple:     hsl(270, 72%, 52%);
+      --pink:       hsl(330, 80%, 55%);
+
+      --text-main:  hsl(222, 35%, 14%);
+      --text-sub:   hsl(220, 18%, 42%);
+      --text-dim:   hsl(220, 12%, 62%);
+
+      --border:     hsl(220, 18%, 88%);
+      --border-strong: hsl(220, 18%, 78%);
+      --border-indigo: hsla(242, 80%, 58%, 0.35);
+      --border-gold:   hsla(43, 95%, 45%, 0.35);
+
+      --glass:      rgba(255, 255, 255, 0.92);
+      --blur:       saturate(160%) blur(18px);
+      --shadow-sm:  0 1px 4px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
+      --shadow-md:  0 4px 16px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.05);
+      --shadow-lg:  0 12px 40px rgba(0,0,0,0.12), 0 4px 12px rgba(0,0,0,0.06);
+      --radius-xl:  20px;
+      --radius-lg:  14px;
+      --radius-md:  10px;
+      --radius-sm:  6px;
+      --ease:       cubic-bezier(0.4, 0, 0.2, 1);
+      --font:       'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-title: 'Outfit', var(--font);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg-deep);
+      background-image:
+        radial-gradient(ellipse 90% 60% at 15% -5%,  hsla(242, 90%, 95%, 0.7) 0%, transparent 55%),
+        radial-gradient(ellipse 70% 50% at 85% 105%, hsla(196, 80%, 92%, 0.6) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 35% at 65%  25%, hsla(43,  85%, 95%, 0.5) 0%, transparent 50%);
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: hsl(220, 18%, 80%); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--indigo); }
+
+    /* ── Layout ── */
+    .app-shell { display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* ── Top Nav (Two Rows Layout) ── */
+    .top-nav {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--glass);
+      backdrop-filter: var(--blur);
+      -webkit-backdrop-filter: var(--blur);
+      border-bottom: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      padding: 0.65rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+    .nav-row-1 {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+    }
+    .nav-row-2 {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      width: 100%;
+      border-top: 1px solid var(--border);
+      padding-top: 0.5rem;
+    }
+
+    .brand { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; flex-shrink: 0; }
+    .brand-icon { font-size: 1.65rem; filter: drop-shadow(0 0 8px var(--indigo-glow)); animation: brandPulse 3s ease-in-out infinite; }
+    .brand-text { display: flex; flex-direction: column; line-height: 1; }
+    .brand-name {
+      font-family: var(--font-title); font-weight: 800; font-size: 1.15rem;
+      background: linear-gradient(135deg, var(--indigo), var(--pink));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .brand-by { font-size: 0.68rem; color: var(--text-sub); font-weight: 500; letter-spacing: 0.04em; }
+
+    .nav-tabs { display: flex; gap: 0.2rem; flex: 1; overflow-x: auto; scrollbar-width: none; }
+    .nav-tabs::-webkit-scrollbar { display: none; }
+
+    .nav-tab {
+      display: flex; align-items: center; gap: 0.4rem;
+      padding: 0.45rem 1rem;
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--text-sub);
+      font-family: var(--font); font-weight: 600; font-size: 0.875rem;
+      cursor: pointer; white-space: nowrap;
+      transition: all 0.2s var(--ease);
+    }
+    .nav-tab:hover { color: var(--text-main); background: hsl(220, 20%, 93%); }
+    .nav-tab.active {
+      background: linear-gradient(135deg, hsla(242, 80%, 58%, 0.1), hsla(330, 80%, 55%, 0.06));
+      border-color: var(--border-indigo);
+      color: var(--indigo);
+    }
+    .nav-tab.live-tab .live-dot {
+      width: 7px; height: 7px; background: var(--red);
+      border-radius: 50%; box-shadow: 0 0 5px var(--red-glow);
+      animation: livePulse 1.2s ease-in-out infinite;
+    }
+    .nav-actions { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      padding: 0.5rem 1.1rem;
+      border-radius: var(--radius-md); border: none;
+      font-family: var(--font); font-weight: 600; font-size: 0.875rem;
+      cursor: pointer; transition: all 0.2s var(--ease);
+    }
+    .btn-indigo {
+      background: linear-gradient(135deg, var(--indigo), hsl(270, 72%, 52%));
+      color: #fff; box-shadow: 0 4px 14px var(--indigo-glow);
+    }
+    .btn-indigo:hover { transform: translateY(-1px); box-shadow: 0 6px 20px var(--indigo-glow); filter: brightness(1.05); }
+    .btn-gold {
+      background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+      color: #fff; box-shadow: 0 4px 14px var(--gold-glow);
+    }
+    .btn-gold:hover { transform: translateY(-1px); box-shadow: 0 6px 20px var(--gold-glow); filter: brightness(1.05); }
+    .btn-cyan {
+      background: linear-gradient(135deg, var(--cyan), hsl(180, 80%, 32%));
+      color: #fff; box-shadow: 0 4px 14px var(--cyan-glow);
+    }
+    .btn-cyan:hover { transform: translateY(-1px); filter: brightness(1.05); }
+    .btn-ghost {
+      background: hsl(220, 20%, 94%);
+      color: var(--text-main);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { background: hsl(220, 20%, 89%); border-color: var(--border-strong); }
+    .btn-sm { padding: 0.3rem 0.7rem; font-size: 0.78rem; }
+    .btn:active { transform: translateY(0) scale(0.97); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
+
+    /* ── Page Body ── */
+    .page-content { padding: 1.5rem; max-width: 1600px; margin: 0 auto; width: 100%; }
+
+    /* ── Section Header ── */
+    .section-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.25rem; }
+    .section-title { font-family: var(--font-title); font-size: 1.3rem; font-weight: 700; color: var(--text-main); }
+    .section-count { font-size: 0.85rem; color: var(--text-sub); font-weight: 500; }
+
+    /* ── Filter Bar ── */
+    .filter-bar { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.25rem; }
+    .search-wrap {
+      display: flex; align-items: center;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 0.4rem 0.75rem;
+      flex: 1; min-width: 200px; max-width: 440px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s var(--ease);
+    }
+    .search-wrap:focus-within { border-color: var(--indigo); box-shadow: 0 0 0 3px var(--indigo-glow); }
+    .search-icon { color: var(--text-dim); margin-right: 0.5rem; }
+    .search-input { background: transparent; border: none; outline: none; color: var(--text-main); font-family: var(--font); font-size: 0.9rem; width: 100%; }
+    .search-input::placeholder { color: var(--text-dim); }
+    .cat-select {
+      background: var(--bg-card); border: 1px solid var(--border);
+      color: var(--text-main); padding: 0.45rem 0.85rem;
+      border-radius: var(--radius-md); font-family: var(--font); font-size: 0.875rem;
+      outline: none; cursor: pointer; box-shadow: var(--shadow-sm);
+    }
+    .cat-select:focus { border-color: var(--indigo); }
+    .cat-select option { background: var(--bg-card); color: var(--text-main); }
+
+    .nav-search-filter {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex: 1;
+      max-width: 440px;
+      margin: 0 1rem;
+    }
+    .nav-search-filter .search-wrap {
+      flex: 1;
+      max-width: none;
+      height: 38px;
+      padding: 0 0.75rem;
+      background: var(--bg-input);
+    }
+    .nav-search-filter .cat-select {
+      height: 38px;
+      background: var(--bg-input);
+      padding: 0 0.75rem;
+    }
+    @media (max-width: 1024px) {
+      .nav-row-2 {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+      }
+      .nav-search-filter {
+        margin: 0;
+        max-width: none;
+      }
+    }
+
+    /* ── Media Grid ── */
+    .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(155px, 1fr)); gap: 1rem; }
+    @media (min-width: 1400px) { .media-grid { grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); } }
+
+    /* ── Media Card ── */
+    .media-card {
+      position: relative; border-radius: var(--radius-lg);
+      overflow: hidden; background: var(--bg-card);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+      cursor: pointer;
+      transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease), border-color 0.25s var(--ease);
+    }
+    .media-card:hover {
+      transform: translateY(-6px) scale(1.02);
+      border-color: var(--border-indigo);
+      box-shadow: var(--shadow-lg), 0 0 0 1px var(--border-indigo);
+    }
+    .card-poster {
+      position: relative; width: 100%; aspect-ratio: 2/3;
+      background: linear-gradient(135deg, hsl(220,20%,94%), hsl(220,20%,90%));
+      overflow: hidden;
+    }
+    .card-poster img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s var(--ease); }
+    .media-card:hover .card-poster img { transform: scale(1.08); }
+    .card-poster-fallback {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 0.5rem; color: var(--text-dim);
+    }
+    .card-poster-fallback span { font-size: 2.5rem; }
+    .card-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.05) 50%, transparent 100%);
+      opacity: 0; transition: opacity 0.25s var(--ease);
+      display: flex; flex-direction: column; justify-content: flex-end;
+      padding: 0.75rem; gap: 0.4rem;
+    }
+    .media-card:hover .card-overlay { opacity: 1; }
+    .overlay-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+    .card-body { padding: 0.65rem 0.75rem 0.75rem; }
+    .card-title {
+      font-size: 0.85rem; font-weight: 600; color: var(--text-main);
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      overflow: hidden; line-height: 1.35; height: 2.3em;
+    }
+    .card-meta { display: flex; align-items: center; margin-top: 0.4rem; }
+    .cat-badge {
+      font-size: 0.68rem; font-weight: 700; padding: 0.15rem 0.45rem;
+      border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+    }
+    .cat-badge.movie  { background: hsla(43,  95%, 45%, 0.1); color: var(--gold-dark); border: 1px solid hsla(43,95%,45%,0.25); }
+    .cat-badge.series { background: hsla(270, 72%, 52%, 0.1); color: var(--purple);    border: 1px solid hsla(270,72%,52%,0.25); }
+    .cat-badge.live   { background: hsla(4,   82%, 52%, 0.1); color: var(--red);       border: 1px solid hsla(4,82%,52%,0.25); }
+    .cat-badge.cat-name { background: hsla(242, 80%, 58%, 0.08); color: var(--indigo); border: 1px solid hsla(242,80%,58%,0.2); }
+
+    .live-badge {
+      position: absolute; top: 0.5rem; right: 0.5rem;
+      display: flex; align-items: center; gap: 0.3rem;
+      background: rgba(255,255,255,0.9); border: 1px solid hsla(4,82%,52%,0.4);
+      padding: 0.15rem 0.45rem; border-radius: 999px;
+      font-size: 0.7rem; font-weight: 700; color: var(--red);
+      box-shadow: var(--shadow-sm);
+    }
+    .live-dot { width: 6px; height: 6px; background: var(--red); border-radius: 50%; box-shadow: 0 0 5px var(--red-glow); animation: livePulse 1.2s ease-in-out infinite; }
+    .ch-num {
+      position: absolute; top: 0.5rem; left: 0.5rem;
+      background: rgba(255,255,255,0.85); color: var(--text-sub);
+      font-size: 0.68rem; font-weight: 700; padding: 0.1rem 0.35rem;
+      border-radius: var(--radius-sm); box-shadow: var(--shadow-sm);
+    }
+
+    /* ── Pagination ── */
+    .pagination { display: flex; align-items: center; justify-content: center; gap: 0.35rem; flex-wrap: wrap; margin-top: 2rem; padding: 1rem 0; }
+    .pg-btn {
+      padding: 0.4rem 0.75rem; border-radius: var(--radius-md);
+      border: 1px solid var(--border); background: var(--bg-card);
+      color: var(--text-main); font-family: var(--font); font-weight: 600; font-size: 0.85rem;
+      cursor: pointer; box-shadow: var(--shadow-sm);
+      transition: all 0.2s var(--ease);
+    }
+    .pg-btn:hover:not(:disabled) { border-color: var(--indigo); color: var(--indigo); box-shadow: 0 2px 8px var(--indigo-glow); }
+    .pg-btn.active { background: linear-gradient(135deg, var(--indigo), var(--purple)); color: #fff; border-color: transparent; box-shadow: 0 4px 12px var(--indigo-glow); }
+    .pg-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .pg-info { font-size: 0.82rem; color: var(--text-sub); margin: 0 0.5rem; }
+
+    /* ── Empty / Loading ── */
+    .empty-state { grid-column: 1/-1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 4rem 2rem; color: var(--text-dim); }
+    .empty-state-icon { font-size: 3.5rem; opacity: 0.4; }
+    .spinner-wrap { grid-column: 1/-1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; min-height: 260px; }
+    .spinner { width: 44px; height: 44px; border: 3px solid var(--border); border-top-color: var(--indigo); border-radius: 50%; animation: spin 0.8s linear infinite; }
+    .spinner-label { color: var(--text-sub); font-size: 0.9rem; }
+
+    /* ── Modal ── */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(20, 25, 60, 0.55);
+      backdrop-filter: blur(10px);
+      z-index: 200; display: flex; align-items: center; justify-content: center;
+      animation: fadeIn 0.2s var(--ease); padding: 1rem;
+    }
+    .modal-box {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg), 0 0 0 1px var(--border-indigo);
+      width: 100%; max-width: 780px; max-height: 90vh;
+      overflow: hidden; display: flex; flex-direction: column;
+      animation: scaleUp 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .modal-hero {
+      position: relative;
+      overflow: hidden;
+      height: 240px;
+      background: #000;
+    }
+    .modal-hero-bg-img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      filter: blur(20px) brightness(0.45);
+      transform: scale(1.1);
+      z-index: 1;
+      display: block;
+    }
+    .modal-hero-gradient {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, var(--bg-card) 0%, transparent 100%);
+      z-index: 2;
+    }
+    .modal-hero-info {
+      position: absolute;
+      bottom: 1.25rem;
+      left: 1.5rem;
+      right: 1.5rem;
+      display: flex;
+      align-items: flex-end;
+      gap: 1.25rem;
+      z-index: 3;
+    }
+    .modal-hero-poster {
+      width: 110px;
+      height: 160px;
+      border-radius: var(--radius-md);
+      object-fit: cover;
+      border: 2px solid rgba(255, 255, 255, 0.85);
+      box-shadow: var(--shadow-lg);
+      flex-shrink: 0;
+    }
+    .modal-hero-details {
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      color: #ffffff;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.75);
+      min-width: 0;
+      flex: 1;
+    }
+    .modal-type-badge {
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: #ffffff;
+      background: var(--indigo);
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      width: fit-content;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    .modal-title {
+      font-family: var(--font-title);
+      font-size: 1.65rem;
+      font-weight: 800;
+      line-height: 1.2;
+      margin: 0.2rem 0;
+      color: #ffffff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .modal-cat-label {
+      font-size: 0.85rem;
+      color: rgba(255, 255, 255, 0.85);
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .modal-body { padding: 1.25rem 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1.25rem; }
+    .action-row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+    .modal-close {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.1rem;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.2s;
+      z-index: 4;
+    }
+    .modal-close:hover {
+      background: rgba(255, 71, 87, 0.9);
+      border-color: #ff4757;
+      color: #ffffff;
+      transform: scale(1.05);
+    }
+
+    /* ── Series Modal ── */
+    .seasons-tabs { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+    .season-btn { padding: 0.35rem 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--bg-card2); color: var(--text-sub); font-family: var(--font); font-size: 0.82rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .season-btn.active { background: linear-gradient(135deg, var(--indigo), var(--purple)); color: #fff; border-color: transparent; }
+    .season-btn:not(.active):hover { border-color: var(--indigo); color: var(--indigo); }
+    .ep-list { display: flex; flex-direction: column; gap: 0.5rem; }
+    .ep-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.7rem 0.9rem; background: var(--bg-card2); border: 1px solid var(--border); border-radius: var(--radius-md); transition: border-color 0.2s; }
+    .ep-row:hover { border-color: var(--border-indigo); background: hsla(242,80%,58%,0.03); }
+    .ep-info { display: flex; flex-direction: column; gap: 0.15rem; }
+    .ep-num { font-size: 0.72rem; font-weight: 700; color: var(--cyan); }
+    .ep-title { font-size: 0.88rem; font-weight: 600; color: var(--text-main); }
+    .ep-actions { display: flex; gap: 0.35rem; flex-shrink: 0; }
+
+    /* ── Video Player ── */
+    .player-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.96); z-index: 300; display: flex; flex-direction: column; animation: fadeIn 0.2s var(--ease); }
+    .player-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.75rem 1.25rem;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.04);
+      flex-shrink: 0;
+    }
+    .player-title { font-family: var(--font-title); font-weight: 700; font-size: 1rem; color: #fff; }
+    .player-video-wrap { flex: 1; display: flex; align-items: center; justify-content: center; background: #000; overflow: hidden; }
+    .player-video { width: 100%; height: 100%; max-height: calc(100vh - 65px); object-fit: contain; outline: none; }
+    .player-error { color: hsl(4,82%,65%); text-align: center; padding: 2rem; display: flex; flex-direction: column; gap: 0.5rem; align-items: center; }
+    .player-loading { display: flex; flex-direction: column; align-items: center; gap: 1rem; color: rgba(255,255,255,0.6); }
+
+    /* ── Download Bar — Fixed at bottom, always visible ── */
+    .dl-bar {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+      background: var(--glass);
+      backdrop-filter: var(--blur);
+      border-top: 2px solid var(--border-indigo);
+      box-shadow: 0 -4px 24px rgba(0,0,0,0.1);
+      padding: 0.6rem 1.5rem;
+      transition: max-height 0.3s var(--ease);
+    }
+    .dl-bar.minimized { padding: 0.4rem 1.5rem; }
+    .dl-bar-header {
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; user-select: none;
+    }
+    .dl-title {
+      font-size: 0.78rem; font-weight: 700; color: var(--indigo);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .dl-minimize-btn {
+      background: transparent; border: 1px solid var(--border);
+      color: var(--text-sub); padding: 0.15rem 0.5rem;
+      border-radius: var(--radius-sm); font-size: 0.75rem; font-weight: 700;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .dl-minimize-btn:hover { border-color: var(--indigo); color: var(--indigo); }
+    .dl-list { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.5rem; }
+    .dl-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.6rem 0.9rem; display: flex; align-items: center; gap: 0.75rem; box-shadow: var(--shadow-sm); }
+    .dl-filename { font-size: 0.82rem; font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-main); }
+    .dl-status-badge { font-size: 0.68rem; font-weight: 700; padding: 0.1rem 0.4rem; border-radius: 999px; white-space: nowrap; }
+    .dl-status-badge.downloading { background: hsla(242,80%,58%,0.1); color: var(--indigo); border: 1px solid hsla(242,80%,58%,0.25); }
+    .dl-status-badge.recording   { background: hsla(4,82%,52%,0.1);   color: var(--red);    border: 1px solid hsla(4,82%,52%,0.25); animation: recPulse 1.2s ease-in-out infinite; }
+    .dl-status-badge.completed   { background: hsla(152,62%,38%,0.1); color: var(--green);  border: 1px solid hsla(152,62%,38%,0.25); }
+    .dl-status-badge.failed      { background: hsla(4,82%,52%,0.1);   color: var(--red);    border: 1px solid hsla(4,82%,52%,0.25); }
+    .dl-status-badge.cancelled   { background: hsl(220,15%,94%); color: var(--text-dim); border: 1px solid var(--border); }
+    @keyframes recPulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+    .dl-progress-wrap { width: 100px; flex-shrink: 0; }
+    .dl-track { height: 4px; background: var(--bg-base); border-radius: 2px; overflow: hidden; }
+    .dl-fill { height: 100%; background: linear-gradient(90deg, var(--indigo), var(--cyan)); border-radius: 2px; transition: width 0.4s; }
+    .dl-pct { font-size: 0.68rem; color: var(--text-sub); margin-top: 0.2rem; text-align: right; }
+    .dl-speed { font-size: 0.72rem; color: var(--text-dim); white-space: nowrap; }
+
+    /* ── Page bottom padding to avoid overlap with fixed dl-bar ── */
+    .has-dl-bar { padding-bottom: 120px; }
+    .settings-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.25rem; box-shadow: var(--shadow-md); animation: slideDown 0.2s var(--ease); }
+    .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem; }
+    .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+    .form-label { font-size: 0.8rem; font-weight: 600; color: var(--text-sub); }
+    .form-input { background: var(--bg-input); border: 1px solid var(--border); color: var(--text-main); padding: 0.5rem 0.75rem; border-radius: var(--radius-md); font-family: var(--font); font-size: 0.88rem; outline: none; transition: border-color 0.2s; }
+    .form-input:focus { border-color: var(--indigo); box-shadow: 0 0 0 3px var(--indigo-glow); }
+    .save-dir-row { display: flex; gap: 0.5rem; }
+    .save-dir-display { flex: 1; padding: 0.5rem 0.75rem; background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-md); font-size: 0.82rem; font-family: monospace; color: var(--text-sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* ── Toasts ── */
+    .toast-stack { position: fixed; bottom: 2rem; right: 1.5rem; display: flex; flex-direction: column; gap: 0.5rem; z-index: 500; pointer-events: none; transition: bottom 0.3s var(--ease); }
+    .toast-stack.has-dl-bar { bottom: 8.5rem; }
+    .toast {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 0.65rem 1rem;
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 0.85rem; font-weight: 500; color: var(--text-main);
+      box-shadow: var(--shadow-lg);
+      pointer-events: all;
+      animation: slideInRight 0.3s cubic-bezier(0.175,0.885,0.32,1.275);
+      max-width: 340px;
+    }
+    .toast.success { border-left: 3px solid var(--green); }
+    .toast.error   { border-left: 3px solid var(--red); }
+    .toast.info    { border-left: 3px solid var(--indigo); }
+
+    /* ── Animations ── */
+    @keyframes fadeIn     { from { opacity: 0; }              to { opacity: 1; } }
+    @keyframes scaleUp    { from { opacity: 0; transform: scale(0.94); } to { opacity: 1; transform: scale(1); } }
+    @keyframes slideDown  { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideInRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+    @keyframes spin       { to { transform: rotate(360deg); } }
+    @keyframes livePulse  { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.4; transform:scale(1.4); } }
+    @keyframes brandPulse { 0%,100% { filter: drop-shadow(0 0 8px var(--indigo-glow)); } 50% { filter: drop-shadow(0 0 18px var(--indigo-glow)); } }
+
+    /* ── Local Library Tab ── */
+    .library-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .library-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1rem 1.25rem;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.25s var(--ease);
+      gap: 1.5rem;
+    }
+    .library-item:hover {
+      border-color: var(--border-indigo);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    .lib-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      flex: 1;
+      min-width: 0;
+    }
+    .lib-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text-main);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .lib-meta {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: 0.78rem;
+      color: var(--text-sub);
+    }
+    .lib-size {
+      font-weight: 600;
+      color: var(--indigo);
+      background: hsla(242, 80%, 58%, 0.08);
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+    }
+    .lib-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-shrink: 0;
+    }
+
+    /* ── Player Navigation Overlay Arrows ── */
+    .player-nav-arrow {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 64px;
+      height: 64px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      font-size: 3rem;
+      font-weight: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      cursor: pointer;
+      z-index: 350;
+      transition: all 0.2s var(--ease);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      user-select: none;
+    }
+    .player-nav-arrow:hover {
+      background: rgba(255, 255, 255, 0.18);
+      border-color: var(--border-indigo);
+      color: var(--indigo);
+      transform: translateY(-50%) scale(1.1);
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6), 0 0 15px var(--indigo-glow);
+    }
+    .player-nav-arrow:active {
+      transform: translateY(-50%) scale(0.95);
+    }
+    .player-nav-prev {
+      left: 24px;
+      padding-right: 4px;
+    }
+    .player-nav-next {
+      right: 24px;
+      padding-left: 4px;
+    }
+
+    /* EPG UI Styles removed */
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+  <script>
+    const { useState, useEffect, useRef, useCallback } = React;
+    const h = React.createElement;
+
+    const getApiUrl = (path) => {
+      const base = window.location.protocol === 'file:' || window.location.origin === 'null'
+        ? 'http://localhost:32100'
+        : '';
+      return base + path;
+    };
+    const apiFetch = (path, options = {}) => {
+      let url = getApiUrl(path);
+      const method = (options.method || 'GET').toUpperCase();
+      if (method === 'GET') {
+        const separator = url.includes('?') ? '&' : '?';
+        url += `${separator}_t=${Date.now()}`;
+      }
+      return fetch(url, options);
+    };
+
+    // ────────────────────────────────────────────────────────────────
+    // VideoPlayer — URL is NEVER shown to user (credentials protected)
+    // ────────────────────────────────────────────────────────────────
+    function VideoPlayer({ title, url, streamId, isLive, downloads, onRecord, onCancelRecord, onClose, onNext, onPrev, hasNext, hasPrev }) {
+      const videoRef = useRef(null);
+      const hlsRef   = useRef(null);
+      const [status, setStatus] = useState('loading');
+      const [errMsg, setErrMsg]  = useState('');
+      const [showArrows, setShowArrows] = useState(false);
+      const mouseTimerRef = useRef(null);
+
+      const activeRec = downloads ? downloads.find(d => d.id && d.id.startsWith('rec_') && d.status === 'downloading' && (d.filename.includes(title) || d.filename.includes(String(streamId)))) : null;
+
+      const handleMouseMove = () => {
+        setShowArrows(true);
+        if (mouseTimerRef.current) {
+          clearTimeout(mouseTimerRef.current);
+        }
+        mouseTimerRef.current = setTimeout(() => {
+          setShowArrows(false);
+        }, 3000);
+      };
+
+      const handleMouseLeave = () => {
+        setShowArrows(false);
+        if (mouseTimerRef.current) {
+          clearTimeout(mouseTimerRef.current);
+        }
+      };
+
+      useEffect(() => {
+        return () => {
+          if (mouseTimerRef.current) clearTimeout(mouseTimerRef.current);
+        };
+      }, []);
+
+      useEffect(() => {
+        const video = videoRef.current;
+        if (!video || !url) return;
+        const cleanup = () => { if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; } };
+
+        if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+          const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
+          hlsRef.current = hls;
+          hls.loadSource(url);
+          hls.attachMedia(video);
+          hls.on(Hls.Events.MANIFEST_PARSED, () => { setStatus('playing'); video.play().catch(()=>{}); });
+          hls.on(Hls.Events.ERROR, (_, data) => { if (data.fatal) { setStatus('error'); setErrMsg(`Stream error (${data.type})`); } });
+        } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+          video.src = url;
+          video.addEventListener('loadedmetadata', () => { setStatus('playing'); video.play().catch(()=>{}); });
+          video.addEventListener('error', () => { setStatus('error'); setErrMsg('Native playback failed.'); });
+        } else {
+          setStatus('error');
+          setErrMsg('HLS is not supported in this browser.');
+        }
+        return cleanup;
+      }, [url]);
+
+      useEffect(() => {
+        const handleKeyDown = (e) => {
+          const video = videoRef.current;
+          if (!video) return;
+
+          // Ignore shortcut if typing in inputs
+          const active = document.activeElement;
+          if (active && (active.tagName === 'INPUT' || active.tagName === 'SELECT' || active.tagName === 'TEXTAREA')) {
+            return;
+          }
+
+          if (e.key === 'Escape') {
+            onClose();
+          } else if (e.key === ' ' || e.key === 'Spacebar') {
+            e.preventDefault();
+            if (video.paused) {
+              video.play().catch(() => {});
+            } else {
+              video.pause();
+            }
+          } else if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            if (isLive) {
+              if (onPrev && hasPrev) onPrev();
+            } else {
+              video.currentTime = Math.max(0, video.currentTime - 10);
+            }
+          } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            if (isLive) {
+              if (onNext && hasNext) onNext();
+            } else {
+              video.currentTime = Math.min(video.duration || 0, video.currentTime + 10);
+            }
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            video.volume = Math.min(1.0, video.volume + 0.1);
+          } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            video.volume = Math.max(0.0, video.volume - 0.1);
+          }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+      }, [onClose, isLive, onNext, onPrev, hasNext, hasPrev]);
+
+      return h('div', { className: 'player-backdrop', onMouseMove: handleMouseMove, onMouseLeave: handleMouseLeave },
+        h('div', { className: 'player-header' },
+          // Title only — URL/credentials are intentionally hidden
+          h('div', { className: 'player-title' }, '▶ ' + title),
+          h('button', { className: 'btn btn-ghost btn-sm', style:{color:'#fff',background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.2)'}, onClick: onClose }, '✕ Close')
+        ),
+        h('div', { className: 'player-video-wrap', style: { position: 'relative', width: '100%', height: '100%' } },
+          status === 'loading' && h('div', { className: 'player-loading' },
+            h('div', { className: 'spinner', style:{borderTopColor:'white'} }),
+            h('span', null, 'Connecting to stream...')
+          ),
+          status === 'error' && h('div', { className: 'player-error' },
+            h('span', { style:{fontSize:'2.5rem'} }, '⚠️'),
+            h('p', { style:{fontWeight:700,color:'#fff'} }, 'Stream Unavailable'),
+            h('p', { style:{fontSize:'0.85rem',color:'rgba(255,255,255,0.5)',maxWidth:'360px'} }, errMsg),
+            h('p', { style:{fontSize:'0.78rem',color:'rgba(255,255,255,0.35)',marginTop:'0.5rem'} }, 'You can try Download instead.')
+          ),
+          h('video', {
+            ref: videoRef, className: 'player-video', controls: true,
+            style: { display: status === 'error' ? 'none' : 'block' }
+          }),
+          showArrows && hasPrev && onPrev && h('button', {
+            className: 'player-nav-arrow player-nav-prev',
+            onClick: (e) => { e.stopPropagation(); onPrev(); },
+            title: 'Previous'
+          }, '‹'),
+          showArrows && hasNext && onNext && h('button', {
+            className: 'player-nav-arrow player-nav-next',
+            onClick: (e) => { e.stopPropagation(); onNext(); },
+            title: 'Next'
+          }, '›')
+        ),
+        isLive && h('div', {
+          style: {
+            padding: '1rem',
+            background: 'rgba(15, 20, 35, 0.95)',
+            borderTop: '1px solid rgba(255,255,255,0.08)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '1rem',
+            flexShrink: 0,
+            zIndex: 310
+          }
+        },
+          activeRec
+            ? h('div', { style: { display: 'flex', alignItems: 'center', gap: '1rem' } },
+                h('span', {
+                  className: 'dl-status-badge recording',
+                  style: { padding: '0.35rem 0.85rem', fontSize: '0.8rem', fontWeight: 'bold' }
+                }, `⏺ RECORDING (${activeRec.downloaded_mb} MB)`),
+                h('button', {
+                  className: 'btn btn-ghost btn-sm',
+                  style: { color: 'var(--red)', borderColor: 'var(--red)', background: 'transparent' },
+                  onClick: () => onCancelRecord(activeRec.id)
+                }, '⏹ Stop Recording')
+              )
+            : h('button', {
+                className: 'btn btn-gold',
+                onClick: () => onRecord(streamId, title)
+              }, '⏺ Start Recording Live')
+        )
+      );
+    }
+
+    // ── Download Item ──
+    function DlItem({ dl, onCancel, onClear, onResume }) {
+      const done   = ['completed','failed','cancelled'].includes(dl.status);
+      const isRec  = dl.id && dl.id.startsWith('rec_');
+      const badge  = isRec ? 'recording' : dl.status;
+      const label  = isRec && dl.status === 'downloading' ? '⏺ REC' : dl.status.toUpperCase();
+      const showProg = !isRec && dl.progress >= 0;
+      const canResume = ['failed', 'cancelled'].includes(dl.status) && !isRec;
+
+      const sizeLabel = dl.total_size_mb > 0 
+        ? `${dl.downloaded_mb} / ${dl.total_size_mb} MB`
+        : `${dl.downloaded_mb} MB`;
+
+      return h('div', { className: 'dl-item' },
+        h('span', { className: 'dl-filename', title: dl.filename }, dl.filename),
+        showProg && h('div', { className: 'dl-progress-wrap' },
+          h('div', { className: 'dl-track' }, h('div', { className: 'dl-fill', style:{width:`${dl.progress}%`} })),
+          h('div', { className: 'dl-pct' }, `${dl.progress}%`)
+        ),
+        !isRec && h('span', { className: 'dl-speed', style: { fontWeight: 600, color: 'var(--indigo)' } }, sizeLabel),
+        isRec && dl.status === 'downloading' && h('span', {className:'dl-speed'}, `${dl.downloaded_mb} MB`),
+        h('span', { className: `dl-status-badge ${badge}` }, label),
+        dl.speed_mb_s > 0 && !isRec && h('span', { className: 'dl-speed' }, `${dl.speed_mb_s.toFixed(1)} MB/s`),
+        !done && h('button', { className: 'btn btn-ghost btn-sm', style:{color:'var(--red)',borderColor:'hsla(4,82%,52%,0.3)'}, onClick: () => onCancel(dl.id) }, '⏹ Stop'),
+        canResume && h('button', { className: 'btn btn-indigo btn-sm', style:{padding:'0.3rem 0.6rem',fontSize:'0.75rem'}, onClick: () => onResume(dl) }, '🔄 Resume'),
+        done && h('button', { className: 'btn btn-ghost btn-sm', style:{color:'var(--text-sub)',borderColor:'var(--border)'}, onClick: () => onClear(dl.id) }, '✕ Clear')
+      );
+    }
+
+    // ── Download Bar ──
+    function DownloadBar({ downloads, onCancel, onClear, onResume }) {
+      const [minimized, setMinimized] = useState(false);
+      const activeCount = downloads.filter(d => ['downloading', 'recording'].includes(d.status) || (d.id && d.id.startsWith('rec_') && d.status === 'downloading')).length;
+
+      return h('div', { className: `dl-bar ${minimized ? 'minimized' : ''}` },
+        h('div', { className: 'dl-bar-header', onClick: () => setMinimized(!minimized) },
+          h('div', { className: 'dl-title' },
+            h('span', null, '⬇ Downloads & Recordings'),
+            activeCount > 0 && h('span', { style: { padding: '0.1rem 0.4rem', background: 'var(--indigo)', color: '#fff', borderRadius: '4px', fontSize: '0.7rem', marginLeft: '0.5rem' } }, activeCount)
+          ),
+          h('button', {
+            className: 'dl-minimize-btn',
+            onClick: (e) => {
+              e.stopPropagation();
+              setMinimized(!minimized);
+            }
+          }, minimized ? 'Expand ⏶' : 'Minimize ⏷')
+        ),
+        !minimized && h('div', { className: 'dl-list' },
+          downloads.map(dl => h(DlItem, { key: dl.id, dl, onCancel, onClear, onResume }))
+        )
+      );
+    }
+
+    // ── Library Item ──
+    function LibraryItem({ item, onWatch, onDelete, onClear }) {
+      const formatDate = (ts) => {
+        const d = new Date(ts * 1000);
+        return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      };
+
+      return h('div', { className: 'library-item' },
+        h('div', { className: 'lib-info' },
+          h('span', { className: 'lib-title', title: item.name }, item.name),
+          h('div', { className: 'lib-meta' },
+            h('span', { className: 'lib-size' }, `${item.size_mb} MB`),
+            h('span', null, `📅 ${formatDate(item.created_at)}`)
+          )
+        ),
+        h('div', { className: 'lib-actions' },
+          h('button', { className: 'btn btn-cyan btn-sm', onClick: onWatch }, '▶ Play'),
+          h('button', { className: 'btn btn-ghost btn-sm', style: { color: 'var(--red)', borderColor: 'hsla(4,82%,52%,0.3)' }, onClick: onDelete }, '🗑️ Delete'),
+          h('button', { className: 'btn btn-ghost btn-sm', style: { color: 'var(--text-sub)', borderColor: 'var(--border)' }, onClick: onClear }, '✕ Clear List')
+        )
+      );
+    }
+
+    // ── Pagination ──
+    function Pagination({ page, pages, total, onPage }) {
+      if (total === 0 || pages <= 1) return null;
+      const range = 3;
+      const s = Math.max(1, page - range), e = Math.min(pages, page + range);
+      const btns = [];
+      if (s > 1) { btns.push(h('button', {key:1, className:'pg-btn', onClick:()=>onPage(1)}, '1')); if(s>2) btns.push(h('span',{key:'ds',style:{color:'var(--text-dim)',padding:'0 0.2rem'}},'…')); }
+      for (let i = s; i <= e; i++) btns.push(h('button', {key:i, className:`pg-btn ${page===i?'active':''}`, onClick:()=>onPage(i)}, i));
+      if (e < pages) { if(e<pages-1) btns.push(h('span',{key:'de',style:{color:'var(--text-dim)',padding:'0 0.2rem'}},'…')); btns.push(h('button',{key:pages,className:'pg-btn',onClick:()=>onPage(pages)},pages)); }
+      return h('div', { className: 'pagination' },
+        h('button', {className:'pg-btn', onClick:()=>onPage(page-1), disabled:page===1}, '◀'),
+        ...btns,
+        h('button', {className:'pg-btn', onClick:()=>onPage(page+1), disabled:page===pages}, '▶'),
+        h('span', {className:'pg-info'}, `${page} / ${pages} — ${total.toLocaleString()} items`)
+      );
+    }
+
+    // ── Series Modal ──
+    function SeriesModal({ item, creds, catName, isFav, onToggleFav, onClose, onDownload, onCopyLink, onWatch, onSelectCategory }) {
+      const [seasons, setSeasons]   = useState([]);
+      const [activeSeason, setAS]   = useState('');
+      const [episodes, setEpisodes] = useState([]);
+      const [allEps, setAllEps]     = useState({});
+      const [loading, setLoading]   = useState(true);
+
+      useEffect(() => {
+        apiFetch(`/api/series-info?id=${item.series_id}`)
+          .then(r => r.json())
+          .then(data => {
+            const s = Object.keys(data.episodes || {});
+            setAllEps(data.episodes || {}); setSeasons(s);
+            if (s.length) { setAS(s[0]); setEpisodes(data.episodes[s[0]] || []); }
+          }).catch(()=>{}).finally(()=>setLoading(false));
+      }, [item.series_id]);
+
+      useEffect(() => {
+        const fn = e => { if (e.key==='Escape') onClose(); };
+        document.addEventListener('keydown', fn);
+        return () => document.removeEventListener('keydown', fn);
+      }, []);
+
+      const toProxy = (u) => getApiUrl(`/api/stream?url=${encodeURIComponent(u)}`);
+      const streamUrl = (epId) => toProxy(`${creds.domain}/series/${creds.username}/${creds.password}/${epId}.m3u8`);
+
+      return h('div', { className: 'modal-backdrop', onClick: onClose },
+        h('div', { className: 'modal-box', onClick: e => e.stopPropagation(), style:{maxWidth:'820px'} },
+          h('div', { className: 'modal-hero' },
+            item.stream_icon && h('img', {src:item.stream_icon, className:'modal-hero-bg-img', onError:e=>e.target.style.display='none'}),
+            h('div', {className:'modal-hero-gradient'}),
+            h('div', {className:'modal-hero-info'},
+              item.stream_icon && h('img', {src:item.stream_icon, className:'modal-hero-poster', onError:e=>e.target.style.display='none'}),
+              h('div', {className:'modal-hero-details'},
+                h('div', {style:{display:'flex',alignItems:'center',gap:'0.5rem'}},
+                  h('div', {className:'modal-type-badge'}, '📺 TV Series'),
+                  h('button', {
+                    className: `btn btn-sm ${isFav ? 'btn-red' : 'btn-ghost'}`,
+                    style: { padding: '0.15rem 0.5rem', fontSize: '0.75rem', color: isFav ? '#ff4757' : '#fff', borderColor: isFav ? '#ff4757' : 'rgba(255,255,255,0.4)', background: 'rgba(0,0,0,0.4)' },
+                    onClick: onToggleFav
+                  }, isFav ? '❤️ Favorite' : '🤍 Add Favorite')
+                ),
+                h('h2', {className:'modal-title'}, item.name),
+                catName && h('div', {
+                  className:'modal-cat-label',
+                  onClick: () => onSelectCategory(item.category_id, 'series')
+                }, '📂 ' + catName)
+              )
+            ),
+            h('button', {className:'modal-close', onClick:onClose}, '✕')
+          ),
+          h('div', {className:'modal-body'},
+            loading
+              ? h('div', {style:{display:'flex',justifyContent:'center',padding:'2rem'}}, h('div',{className:'spinner'}))
+              : h('div', null,
+                  seasons.length > 0 && h('div', {className:'seasons-tabs'},
+                    seasons.map(s => h('button', {key:s, className:`season-btn ${activeSeason===s?'active':''}`, onClick:()=>{setAS(s);setEpisodes(allEps[s]||[]);}}, `Season ${s}`))
+                  ),
+                  h('div', {className:'ep-list'},
+                    episodes.length
+                      ? episodes.map((ep, idx) => {
+                          const code = `S${String(activeSeason).padStart(2,'0')}E${String(ep.episode_num||ep.id||0).padStart(2,'0')}`;
+                          const title = ep.title || `Episode ${ep.episode_num || ep.id}`;
+                          const fname = `${item.name} - ${code}`;
+                          return h('div', {key:ep.id, className:'ep-row'},
+                            h('div', {className:'ep-info'},
+                              h('span', {className:'ep-num'}, code),
+                              h('span', {className:'ep-title'}, title)
+                            ),
+                            h('div', {className:'ep-actions'},
+                              h('button', {className:'btn btn-cyan btn-sm', onClick:()=>onWatch(idx, episodes, activeSeason)}, '▶'),
+                              h('button', {className:'btn btn-gold btn-sm', onClick:()=>onDownload('series', ep.id, fname, null)}, '⬇'),
+                              h('button', {className:'btn btn-ghost btn-sm', onClick:()=>onDownload('series', ep.id, fname, 10*1024*1024)}, '📋'),
+                              h('button', {className:'btn btn-ghost btn-sm', onClick:()=>onCopyLink('series', ep.id, ep.container_extension||'mp4')}, '🔗')
+                            )
+                          );
+                        })
+                      : h('p', {style:{color:'var(--text-dim)',textAlign:'center',padding:'1.5rem'}}, 'No episodes found.')
+                  )
+                )
+          )
+        )
+      );
+    }
+
+    function ItemDetailModal({ item, type, creds, catName, isFav, onToggleFav, onClose, onDownload, onCopyLink, onWatch, onRecord, onSelectCategory }) {
+      const toProxy = (u) => getApiUrl(`/api/stream?url=${encodeURIComponent(u)}`);
+      const streamUrl = toProxy(
+        type === 'movie'
+          ? `${creds.domain}/movie/${creds.username}/${creds.password}/${item.stream_id}.m3u8`
+          : `${creds.domain}/live/${creds.username}/${creds.password}/${item.stream_id}.m3u8`
+      );
+
+      useEffect(() => {
+        const fn = e => { if (e.key==='Escape') onClose(); };
+        document.addEventListener('keydown', fn);
+        return () => document.removeEventListener('keydown', fn);
+      }, []);
+
+      return h('div', {className:'modal-backdrop', onClick:onClose},
+        h('div', {className:'modal-box', onClick:e=>e.stopPropagation()},
+          h('div', {className:'modal-hero'},
+            item.stream_icon && h('img', {src:item.stream_icon, className:'modal-hero-bg-img', onError:e=>e.target.style.display='none'}),
+            h('div', {className:'modal-hero-gradient'}),
+            h('div', {className:'modal-hero-info'},
+              item.stream_icon && h('img', {src:item.stream_icon, className:'modal-hero-poster', onError:e=>e.target.style.display='none'}),
+              h('div', {className:'modal-hero-details'},
+                h('div', {className:'modal-type-badge'}, type==='movie' ? '🎬 Movie' : '📡 Live Channel'),
+                h('h2', {className:'modal-title'}, item.name),
+                catName && h('div', {
+                  className:'modal-cat-label',
+                  onClick: () => onSelectCategory(item.category_id, type)
+                }, '📂 ' + catName)
+              )
+            ),
+            h('button', {className:'modal-close', onClick:onClose}, '✕')
+          ),
+          h('div', {className:'modal-body'},
+            h('div', {className:'action-row'},
+              h('button', {className:'btn btn-cyan', onClick:()=>onWatch(item.name, streamUrl, item.stream_id, type === 'live')}, '▶ Watch Now'),
+              h('button', {
+                className: `btn ${isFav ? 'btn-red' : 'btn-ghost'}`,
+                style: { color: isFav ? '#ff4757' : '', borderColor: isFav ? '#ff4757' : '' },
+                onClick: onToggleFav
+              }, isFav ? '❤️ Favorite' : '🤍 Add Favorite'),
+              type==='movie' && h('button', {className:'btn btn-gold', onClick:()=>{onDownload('movie',item.stream_id,item.name,null);onClose();}}, '⬇ Download Full'),
+              type==='movie' && h('button', {className:'btn btn-ghost', onClick:()=>{onDownload('movie',item.stream_id,item.name,10*1024*1024);onClose();}}, '📋 10MB Sample'),
+              type==='live' && h('button', {className:'btn btn-gold', onClick:()=>{onRecord(item.stream_id,item.name);onClose();}}, '⏺ Record Live'),
+              h('button', {className:'btn btn-ghost', onClick:()=>onCopyLink(type,item.stream_id,item.container_extension||'ts')}, '🔗 Copy Link')
+            ),
+            catName && h('div', {style:{display:'flex',gap:'0.5rem',flexWrap:'wrap'}},
+              h('span', {
+                className:'cat-badge cat-name',
+                style:{cursor:'pointer'},
+                onClick: () => onSelectCategory(item.category_id, type)
+              }, catName),
+              h('span', {style:{fontSize:'0.75rem',color:'var(--text-dim)',alignSelf:'center'}}, `Stream #${item.stream_id}`)
+            )
+          )
+        )
+      );
+    }
+
+    // ── Media Card ──
+    function MediaCard({ item, type, catName, isFav, onToggleFav, onRemove, onClick }) {
+      const [imgErr, setImgErr] = useState(false);
+      const icon = type==='movie' ? '🎬' : type==='series' ? '📺' : '📡';
+      const badgeCls = type==='movie' ? 'cat-badge movie' : type==='series' ? 'cat-badge series' : 'cat-badge live';
+
+      return h('div', {className:'media-card', onClick:()=>onClick(item)},
+        h('div', {className:'card-poster'},
+          !imgErr && item.stream_icon
+            ? h('img', {src:item.stream_icon, alt:item.name, loading:'lazy', onError:()=>setImgErr(true)})
+            : null,
+          (imgErr || !item.stream_icon) && h('div', {className:'card-poster-fallback'},
+            h('span', null, icon),
+            h('small', {style:{fontSize:'0.7rem',textAlign:'center',padding:'0 0.5rem',color:'var(--text-dim)'}}, item.name)
+          ),
+          type === 'live' && h('div', {className:'live-badge'}, h('div',{className:'live-dot'}), 'LIVE'),
+          type === 'live' && item.num && h('div', {className:'ch-num'}, `#${item.num}`),
+          onRemove && h('button', {
+            className: 'remove-recent-btn',
+            onClick: (e) => { e.stopPropagation(); onRemove(); },
+            style: {
+              position: 'absolute', top: '0.5rem', left: '0.5rem',
+              background: 'rgba(255, 71, 87, 0.85)', border: 'none',
+              borderRadius: '50%', width: '32px', height: '32px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', zIndex: 10, color: '#ffffff',
+              transition: 'all 0.2s', fontSize: '0.85rem',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+            },
+            title: 'Remove from history'
+          }, '🗑️'),
+          h('button', {
+            className: `fav-heart-btn ${isFav ? 'active' : ''}`,
+            onClick: (e) => { e.stopPropagation(); onToggleFav(); },
+            style: {
+              position: 'absolute', top: '0.5rem', right: '0.5rem',
+              background: 'rgba(15, 20, 35, 0.75)', border: 'none',
+              borderRadius: '50%', width: '32px', height: '32px',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', zIndex: 10, color: isFav ? '#ff4757' : '#ffffff',
+              transition: 'all 0.2s', fontSize: '0.85rem',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+            }
+          }, isFav ? '❤️' : '🤍'),
+          h('div', {className:'card-overlay'},
+            h('div', {className:'overlay-actions'},
+              h('span', {className:'btn btn-cyan btn-sm', style:{pointerEvents:'none'}}, '▶ Watch'),
+              type !== 'series' && h('span', {className:'btn btn-gold btn-sm', style:{pointerEvents:'none'}}, '⬇')
+            )
+          )
+        ),
+        h('div', {className:'card-body'},
+          h('div', {className:'card-title', title:item.name}, item.name),
+          h('div', {className:'card-meta'},
+            catName
+              ? h('span', {className:'cat-badge cat-name', style:{maxWidth:'100%'}}, catName)
+              : h('span', {className:badgeCls}, type==='movie'?'Movie':type==='series'?'Series':'Live')
+          )
+        )
+      );
+    }
+
+    // ────────────────────────────────────────────────────────────────
+    // Main App
+    // ────────────────────────────────────────────────────────────────
+    function App() {
+      const [creds, setCreds]       = useState({domain:'',username:'',password:''});
+      const [saveDir, setSaveDir]   = useState('');
+      const [showSettings, setShowSettings] = useState(false);
+      const [editCreds, setEditCreds] = useState({domain:'',username:'',password:''});
+
+      const [activeTab, setActiveTab] = useState('movies');
+      const [search, setSearch]       = useState('');
+      const [debSearch, setDebSearch] = useState('');
+      const [page, setPage]           = useState(1);
+      const [totalPages, setTotalPages] = useState(1);
+      const [total, setTotal]         = useState(0);
+      const [items, setItems]         = useState([]);
+      const [loading, setLoading]     = useState(false);
+
+      const [cats, setCats]           = useState({});
+      const [catFilter, setCatFilter] = useState('');
+      const [catOptions, setCatOptions] = useState([]);
+
+      const [detailItem, setDetailItem]   = useState(null);
+      const [seriesItem, setSeriesItem]   = useState(null);
+      const [playerState, setPlayerState] = useState(null);
+      const [activePlaylist, setActivePlaylist] = useState([]);
+      const [activePlaylistIndex, setActivePlaylistIndex] = useState(-1);
+
+      const [downloads, setDownloads] = useState([]);
+      const [toasts, setToasts]       = useState([]);
+
+      const [favs, setFavs]           = useState([]);
+      const [updating, setUpdating]   = useState(false);
+      const [appVersion, setAppVersion] = useState('');
+
+      const LIMIT = 24;
+
+      const pendingCategoryFilterRef = useRef(null);
+
+      const handleSelectCategory = useCallback((categoryId, categoryType) => {
+        let tab = 'movies';
+        if (categoryType === 'series') tab = 'series';
+        if (categoryType === 'live') tab = 'live';
+        
+        if (activeTab === tab) {
+          setCatFilter(String(categoryId));
+          setPage(1);
+          setSearch('');
+          setDetailItem(null);
+          setSeriesItem(null);
+        } else {
+          pendingCategoryFilterRef.current = String(categoryId);
+          setActiveTab(tab);
+          setPage(1);
+          setSearch('');
+          setDetailItem(null);
+          setSeriesItem(null);
+        }
+      }, [activeTab]);
+
+      const toast = useCallback((msg, type='info') => {
+        const id = Date.now();
+        setToasts(p => [...p, {id, msg, type}]);
+        setTimeout(() => setToasts(p => p.filter(t => t.id!==id)), 2000);
+      }, []);
+
+      const playPlaylistIndex = useCallback((index, currentPlaylist = activePlaylist) => {
+        if (!currentPlaylist || !currentPlaylist[index]) return;
+        const playConfig = currentPlaylist[index];
+        
+        setPlayerState({
+          title: playConfig.title,
+          url: playConfig.url,
+          streamId: playConfig.streamId,
+          isLive: playConfig.isLive
+        });
+        setActivePlaylistIndex(index);
+        
+        const targetItem = playConfig.parentItem || playConfig.rawItem;
+        const targetType = playConfig.type;
+        if (targetItem && targetType && targetType !== 'library') {
+          const streamId = playConfig.streamId;
+          apiFetch('/api/recents', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: targetType,
+              id: streamId,
+              name: targetItem.name,
+              stream_icon: targetItem.stream_icon,
+              category_id: targetItem.category_id
+            })
+          }).then(() => {
+            if (activeTab === 'recents') {
+              fetchMedia();
+            }
+          }).catch(() => {});
+        }
+      }, [activePlaylist, activeTab]);
+
+      const playNext = useCallback(() => {
+        if (!activePlaylist || activePlaylist.length <= 1) return;
+        const newIndex = (activePlaylistIndex + 1) % activePlaylist.length;
+        playPlaylistIndex(newIndex);
+      }, [activePlaylist, activePlaylistIndex, playPlaylistIndex]);
+
+      const playPrev = useCallback(() => {
+        if (!activePlaylist || activePlaylist.length <= 1) return;
+        const newIndex = (activePlaylistIndex - 1 + activePlaylist.length) % activePlaylist.length;
+        playPlaylistIndex(newIndex);
+      }, [activePlaylist, activePlaylistIndex, playPlaylistIndex]);
+
+      useEffect(() => {
+        const t = setTimeout(() => { setDebSearch(search); setPage(1); }, 380);
+        return () => clearTimeout(t);
+      }, [search]);
+
+      useEffect(() => { fetchCreds(); fetchFavorites(); const iv = setInterval(fetchDownloads, 1500); return () => clearInterval(iv); }, []);
+
+
+
+      useEffect(() => {
+        if (pendingCategoryFilterRef.current) {
+          setCatFilter(pendingCategoryFilterRef.current);
+          pendingCategoryFilterRef.current = null;
+        } else {
+          setCatFilter('');
+        }
+        loadCats();
+      }, [activeTab]);
+
+      useEffect(() => { fetchMedia(); }, [activeTab, debSearch, page, catFilter]);
+
+      const fetchCreds = async () => {
+        try {
+          const r = await apiFetch('/api/creds');
+          if (r.ok) {
+            const d = await r.json();
+            const c = {
+              domain: d.domain || '',
+              username: d.username || '',
+              password: d.password || '',
+              exp_date: d.exp_date || ''
+            };
+            setCreds(c);
+            setEditCreds(c);
+            setSaveDir(d.save_dir||'');
+            setAppVersion(d.version || '');
+          }
+        } catch(e) { toast('Error loading credentials','error'); }
+      };
+
+      const fetchFavorites = async () => {
+        try {
+          const r = await apiFetch('/api/favorites');
+          if (r.ok) {
+            const d = await r.json();
+            setFavs(d.favorites || d.items || []);
+          }
+        } catch(e) {}
+      };
+
+      const isFavorite = (id, type) => {
+        return favs.some(f => String(f.id) === String(id) && f.type === type);
+      };
+
+      const toggleFavorite = async (item, type) => {
+        const itemId = String(item.stream_id || item.series_id || item.id);
+        const active = isFavorite(itemId, type);
+        const action = active ? 'remove' : 'add';
+        
+        // Optimistic update
+        let updatedFavs;
+        if (active) {
+          updatedFavs = favs.filter(f => !(String(f.id) === itemId && f.type === type));
+        } else {
+          updatedFavs = [...favs, {
+            id: itemId,
+            type,
+            name: item.name,
+            stream_icon: item.stream_icon,
+            category_id: item.category_id
+          }];
+        }
+        setFavs(updatedFavs);
+        
+        try {
+          const r = await apiFetch('/api/favorites', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action,
+              id: itemId,
+              type,
+              name: item.name,
+              stream_icon: item.stream_icon,
+              category_id: item.category_id
+            })
+          });
+          
+          if (r.ok) {
+            toast(active ? 'Removed from favorites' : 'Added to favorites', 'success');
+            if (activeTab === 'favorites') {
+              setItems(p => p.filter(f => !(String(f.stream_id || f.series_id || f.id) === itemId && (f.type || type) === type)));
+              setTotal(p => Math.max(0, p - 1));
+            }
+          } else {
+            fetchFavorites();
+            toast('Failed to update favorites', 'error');
+          }
+        } catch(e) {
+          fetchFavorites();
+          toast('Error updating favorites', 'error');
+        }
+      };
+
+      const handleWatch = (item, type, episodeTitle=null, episodeUrl=null, customPlaylist=null, customIndex=-1) => {
+        let title = item.name;
+        let url = '';
+        let streamId = item.stream_id || item.series_id || item.id;
+        let isLive = type === 'live';
+        
+        if (type === 'movie') {
+          url = getApiUrl(`/api/stream?url=${encodeURIComponent(`${creds.domain}/movie/${creds.username}/${creds.password}/${item.stream_id}.m3u8`)}`);
+        } else if (type === 'live') {
+          url = getApiUrl(`/api/stream?url=${encodeURIComponent(`${creds.domain}/live/${creds.username}/${creds.password}/${item.stream_id}.m3u8`)}`);
+        } else if (type === 'series' && episodeTitle && episodeUrl) {
+          title = episodeTitle;
+          url = episodeUrl;
+        }
+        
+        // Save to recents API
+        apiFetch('/api/recents', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type,
+            id: streamId,
+            name: item.name,
+            stream_icon: item.stream_icon,
+            category_id: item.category_id
+          })
+        }).then(() => {
+          if (activeTab === 'recents') {
+            fetchMedia();
+          }
+        }).catch(() => {});
+        
+        setDetailItem(null);
+        setSeriesItem(null);
+
+        if (customPlaylist) {
+          setActivePlaylist(customPlaylist);
+          setActivePlaylistIndex(customIndex);
+        } else {
+          const fallbackPlaylist = [{
+            title,
+            url,
+            streamId,
+            isLive,
+            type,
+            rawItem: item
+          }];
+          setActivePlaylist(fallbackPlaylist);
+          setActivePlaylistIndex(0);
+        }
+
+        setPlayerState({ title, url, streamId, isLive });
+      };
+
+      const loadCats = async () => {
+        try {
+          if (activeTab === 'favorites' || activeTab === 'recents' || activeTab === 'library') {
+            setCats({}); setCatOptions([]);
+            return;
+          }
+          const ep = activeTab==='movies' ? '/api/vod-categories' : activeTab==='series' ? '/api/series-categories' : '/api/live-categories';
+          const r = await apiFetch(ep);
+          if (r.ok) {
+            const list = await r.json();
+            const map = {}; list.forEach(c => { map[String(c.category_id)] = c.category_name; });
+            setCats(map); setCatOptions(list);
+          }
+        } catch(e) {}
+      };
+
+      const fetchMedia = async () => {
+        setItems([]);
+        setTotal(0);
+        setLoading(true);
+        try {
+          if (activeTab === 'favorites' || activeTab === 'recents' || activeTab === 'library') {
+            const endpoint = activeTab === 'library' ? '/api/library' : `/api/${activeTab}`;
+            const r = await apiFetch(endpoint);
+            if (r.ok) {
+              const d = await r.json();
+              const rawItems = d.items || [];
+              let filtered = rawItems;
+              if (debSearch) {
+                const q = debSearch.toLowerCase();
+                filtered = filtered.filter(item => item.name && item.name.toLowerCase().includes(q));
+              }
+              const total = filtered.length;
+              const pages = Math.max(1, Math.ceil(total / LIMIT));
+              const startIdx = (page - 1) * LIMIT;
+              setItems(filtered.slice(startIdx, startIdx + LIMIT));
+              setTotalPages(pages);
+              setTotal(total);
+            } else {
+              setItems([]);
+              setTotalPages(1);
+              setTotal(0);
+            }
+          } else {
+            const ep = activeTab==='movies' ? 'movies' : activeTab==='series' ? 'series' : 'live';
+            const params = new URLSearchParams({query:debSearch, page, limit:LIMIT});
+            if (catFilter) params.set('category_id', catFilter);
+            const r = await apiFetch(`/api/${ep}?${params}`);
+            if (r.ok) { 
+              const d = await r.json(); 
+              setItems(d.movies||d.series||d.channels||[]); 
+              setTotalPages(d.pages||1); 
+              setTotal(d.total||0); 
+            } else {
+              setItems([]);
+              setTotalPages(1);
+              setTotal(0);
+            }
+          }
+        } catch(e) { 
+          setItems([]);
+          setTotalPages(1);
+          setTotal(0);
+          toast(`Error loading ${activeTab}`,'error'); 
+        }
+        finally { setLoading(false); }
+      };
+
+      const fetchDownloads = async () => { try { const r=await apiFetch('/api/downloads'); if(r.ok){const d=await r.json();setDownloads(d.downloads||[]);} } catch(e){} };
+
+      const handleSaveCreds = async (e) => {
+        e.preventDefault();
+        try {
+          const r = await apiFetch('/api/creds', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(editCreds)});
+          if (r.ok) {
+            setShowSettings(false);
+            toast('Credentials saved! ✓','success');
+            await fetchCreds();
+            setPage(1);
+            fetchMedia();
+          }
+          else toast('Failed to save','error');
+        } catch(e) { toast('Connection error','error'); }
+      };
+
+      const handleBrowse = async () => {
+        toast('Select folder in the dialog...','info');
+        try { const r = await apiFetch('/api/select-dir'); if(r.ok){const d=await r.json();if(d.path){setSaveDir(d.path);toast('Save folder updated! ✓','success');}} } catch(e) { toast('Failed','error'); }
+      };
+
+      const handleUpdate = async () => {
+        setUpdating(true);
+        toast('Checking for updates on GitHub...', 'info');
+        try {
+          const r = await apiFetch('/api/update', { method: 'POST' });
+          const d = await r.json();
+          if (r.ok && d.status === 'success') {
+            toast('Update successful! ✓ Restarting application...', 'success');
+            setTimeout(() => {
+              window.location.reload();
+            }, 4000);
+          } else if (r.ok && d.status === 'up_to_date') {
+            toast(d.message, 'success');
+          } else {
+            toast(d.message || 'Update failed', 'error');
+          }
+        } catch(e) {
+          toast('Update check failed. Check your internet connection.', 'error');
+        } finally {
+          setUpdating(false);
+        }
+      };
+
+      const handleStartGrab = async () => {
+        if (!editCreds.grab_sites || !editCreds.grab_sites.trim()) {
+          toast("Please enter at least one site name", "error");
+          return;
+        }
+        try {
+          setGrabStatus('running');
+          setGrabLogs(['[~] Starting EPG scraper...']);
+          const r = await apiFetch('/api/epg/grab', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sites: editCreds.grab_sites, lang: editCreds.grab_lang })
+          });
+          if (r.ok) {
+            const data = await r.json();
+            toast(data.message || "EPG scraper started", "info");
+          } else {
+            const errText = await r.text();
+            toast(`Failed to start: ${errText}`, "error");
+          }
+        } catch (e) {
+          toast(`Error starting grabber: ${e}`, "error");
+        }
+      };
+
+      const handleDownload = async (mediaType, id, filename, limitBytes=null) => {
+        const clean = filename.replace(/[:/\\*?"<>|]/g,'').trim();
+        try {
+          const r = await apiFetch('/api/download', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:mediaType,id,filename:clean,limit_bytes:limitBytes})});
+          if (r.ok) { toast(`⬇ Download started: ${clean}`,'success'); fetchDownloads(); }
+          else toast('Download failed','error');
+        } catch(e) { toast('Connection error','error'); }
+      };
+
+      const handleCopyLink = async (mediaType, id, ext) => {
+        const urlP = mediaType==='movie'?'movie':mediaType==='live'?'live':'series';
+        const url = `${creds.domain}/${urlP}/${creds.username}/${creds.password}/${id}.${ext}`;
+        try {
+          const r = await apiFetch('/api/copy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:url})});
+          toast('🔗 Link copied!','success');
+          if (!r.ok) try { navigator.clipboard.writeText(url); } catch(e2){}
+        } catch(e) { toast('Failed to copy','error'); }
+      };
+
+      const handleRecord = async (streamId, filename) => {
+        const clean = filename.replace(/[:/\\*?"<>|]/g,'').trim();
+        try {
+          const r = await apiFetch('/api/record', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:streamId,filename:clean})});
+          if (r.ok) { toast(`⏺ Recording started: ${clean}`,'success'); fetchDownloads(); }
+          else toast('Recording failed','error');
+        } catch(e) { toast('Connection error','error'); }
+      };
+
+      const handleWatchLibrary = (item) => {
+        const title = item.name;
+        const url = getApiUrl(`/api/library/stream?file=${encodeURIComponent(item.name)}`);
+        
+        const libraryPlaylist = items.map(itm => {
+          return {
+            title: itm.name,
+            url: getApiUrl(`/api/library/stream?file=${encodeURIComponent(itm.name)}`),
+            streamId: itm.name,
+            isLive: false,
+            type: 'library',
+            rawItem: itm
+          };
+        });
+        const idx = items.findIndex(itm => itm.name === item.name);
+        
+        setActivePlaylist(libraryPlaylist);
+        setActivePlaylistIndex(idx >= 0 ? idx : 0);
+        setPlayerState({ title, url, streamId: item.name, isLive: false });
+      };
+
+      const handleDeleteLibrary = async (item) => {
+        if (!confirm(`Are you sure you want to permanently delete "${item.name}" from your local library and disk?`)) {
+          return;
+        }
+        try {
+          const r = await apiFetch('/api/library/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ file: item.name })
+          });
+          if (r.ok) {
+            toast(`Deleted file: ${item.name}`, 'success');
+            fetchMedia();
+          } else {
+            const errData = await r.json().catch(() => ({}));
+            toast(errData.message || 'Failed to delete file', 'error');
+          }
+        } catch(e) {
+          toast('Error deleting file', 'error');
+        }
+      };
+
+      const handleClearLibrary = async (item) => {
+        try {
+          const r = await apiFetch('/api/library/clear', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ file: item.name })
+          });
+          if (r.ok) {
+            toast(`Removed from list: ${item.name}`, 'success');
+            fetchMedia();
+          } else {
+            toast('Failed to clear item', 'error');
+          }
+        } catch(e) {
+          toast('Error clearing item', 'error');
+        }
+      };
+
+      const handleImportLibrary = async () => {
+        toast('Choose a video file to import...', 'info');
+        try {
+          const r = await apiFetch('/api/library/import', { method: 'POST' });
+          if (r.ok) {
+            const d = await r.json();
+            if (d.status === 'success') {
+              toast(`Import started: ${d.filename}`, 'success');
+              setTimeout(fetchMedia, 600);
+            } else if (d.status === 'cancelled') {
+              // Dialog cancelled
+            } else {
+              toast('Import failed', 'error');
+            }
+          }
+        } catch(e) {
+          toast('Error importing file', 'error');
+        }
+      };
+
+      const handleCancelDownload = async (id) => { try { await apiFetch(`/api/cancel-download?id=${id}`); fetchDownloads(); } catch(e){} };
+      const handleClearDownload = async (id) => { try { await apiFetch(`/api/clear-download?id=${id}`); fetchDownloads(); } catch(e){} };
+
+      const handleResumeDownload = async (dl) => {
+        let baseFilename = dl.filename;
+        if (baseFilename.endsWith('_sample.ts')) {
+          baseFilename = baseFilename.slice(0, -10);
+        } else if (baseFilename.endsWith('.ts')) {
+          baseFilename = baseFilename.slice(0, -3);
+        }
+        
+        try {
+          await apiFetch(`/api/clear-download?id=${dl.id}`);
+          fetchDownloads();
+          
+          const r = await apiFetch('/api/download', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: dl.media_type,
+              id: dl.stream_id,
+              filename: baseFilename,
+              limit_bytes: dl.limit_bytes
+            })
+          });
+          if (r.ok) {
+            toast(`🔄 Resuming download: ${baseFilename}`, 'success');
+            fetchDownloads();
+          } else {
+            toast('Failed to resume download', 'error');
+          }
+        } catch (e) {
+          toast('Connection error', 'error');
+        }
+      };
+
+      const handleRemoveRecent = async (item, type) => {
+        const itemId = String(item.stream_id || item.series_id || item.id);
+        try {
+          const r = await apiFetch('/api/recents/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: itemId, type })
+          });
+          if (r.ok) {
+            toast('Removed from history', 'success');
+            setItems(p => p.filter(f => !(String(f.stream_id || f.series_id || f.id) === itemId && (f.type || type) === type)));
+            setTotal(p => Math.max(0, p - 1));
+          } else {
+            toast('Failed to remove item', 'error');
+          }
+        } catch (e) {
+          toast('Error removing item', 'error');
+        }
+      };
+
+      const handleClearAllRecents = async () => {
+        if (!confirm('Are you sure you want to clear your entire watch history?')) {
+          return;
+        }
+        try {
+          const r = await apiFetch('/api/recents/clear', { method: 'POST' });
+          if (r.ok) {
+            toast('Watch history cleared', 'success');
+            setItems([]);
+            setTotal(0);
+            setTotalPages(1);
+          } else {
+            toast('Failed to clear history', 'error');
+          }
+        } catch (e) {
+          toast('Error clearing history', 'error');
+        }
+      };
+
+      const catNameFor = (item) => cats[String(item.category_id)] || '';
+      const domainShort = creds.domain ? creds.domain.replace(/^https?:\/\//,'') : 'Not Set';
+      const isAdmin = creds.username && creds.username.toLowerCase() === 'admin';
+      const isEditAdmin = editCreds.username && editCreds.username.toLowerCase() === 'admin';
+      const activeDls = downloads.filter(d => d.status==='downloading');
+
+      return h('div', {className:'app-shell'},
+
+        // ── Toasts ──
+        h('div', {className:`toast-stack ${downloads.length > 0 ? 'has-dl-bar' : ''}`},
+          toasts.map(t => h('div', {key:t.id, className:`toast ${t.type}`},
+            t.type==='success'?'✅':t.type==='error'?'❌':'ℹ️', ' ', t.msg
+          ))
+        ),
+
+        // ── Top Nav ──
+        h('nav', {className:'top-nav'},
+          h('div', {className:'nav-row-1'},
+            h('a', {className:'brand', href:'#'},
+              h('span', {className:'brand-icon'}, '📡'),
+              h('div', {className:'brand-text'},
+                h('span', {className:'brand-name'}, 'Elamir Media Hub'),
+                h('span', {className:'brand-by'}, `by Mohamed Elamir ${appVersion ? '— v' + appVersion : ''}`)
+              )
+            ),
+            h('div', {className:'nav-actions'},
+              creds.exp_date && h('span', {
+                style: {
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  color: 'var(--green)',
+                  padding: '0.3rem 0.65rem',
+                  background: 'hsla(152, 62%, 38%, 0.1)',
+                  borderRadius: 'var(--radius-md)',
+                  marginRight: '0.5rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.25rem'
+                }
+              }, `📅 Expiry: ${creds.exp_date}`),
+              activeDls.length > 0 && h('span', {style:{fontSize:'0.8rem',fontWeight:700,color:'var(--indigo)',padding:'0.3rem 0.6rem',background:'hsla(242,80%,58%,0.1)',borderRadius:'var(--radius-md)',marginRight:'0.5rem'}},`⬇ ${activeDls.length}`),
+              h('button', {className:'btn btn-ghost btn-sm', onClick:()=>setShowSettings(!showSettings)},
+                showSettings ? '✕ Close' : '⚙️ Settings'
+              )
+            )
+          ),
+          h('div', {className:'nav-row-2'},
+            h('div', {className:'nav-tabs'},
+              h('button', {className:`nav-tab ${activeTab==='movies'?'active':''}`, onClick:()=>{setActiveTab('movies');setPage(1);setSearch('');}}, '🎬 Movies'),
+              h('button', {className:`nav-tab ${activeTab==='series'?'active':''}`, onClick:()=>{setActiveTab('series');setPage(1);setSearch('');}}, '📺 TV Shows'),
+              h('button', {className:`nav-tab live-tab ${activeTab==='live'?'active':''}`, onClick:()=>{setActiveTab('live');setPage(1);setSearch('');}},
+                h('div', {className:'live-dot'}), 'Live TV'
+              ),
+              h('button', {className:`nav-tab ${activeTab==='favorites'?'active':''}`, onClick:()=>{setActiveTab('favorites');setPage(1);setSearch('');}}, '❤️ Favorites'),
+              h('button', {className:`nav-tab ${activeTab==='recents'?'active':''}`, onClick:()=>{setActiveTab('recents');setPage(1);setSearch('');}}, '🕒 Recent'),
+              h('button', {className:`nav-tab ${activeTab==='library'?'active':''}`, onClick:()=>{setActiveTab('library');setPage(1);setSearch('');}}, '📂 My Library')
+            ),
+            h('div', {className:'nav-search-filter', style:{margin:0}},
+              h('div', {className:'search-wrap'},
+                h('span', {className:'search-icon'}, '🔍'),
+                h('input', {className:'search-input',type:'text',placeholder:`Search ${activeTab==='live'?'channels':activeTab}...`,value:search,onChange:e=>setSearch(e.target.value)})
+              ),
+              catOptions.length > 0 && h('select', {className:'cat-select',value:catFilter,onChange:e=>{setCatFilter(e.target.value);setPage(1);}},
+                h('option', {value:''}, 'All Categories'),
+                catOptions.map(c => h('option', {key:c.category_id, value:String(c.category_id)}, c.category_name))
+              )
+            )
+          )
+        ),
+
+        // ── Content ──
+        h('div', {className:`page-content${downloads.length>0?' has-dl-bar':''}`, style:{flex:1}},
+
+          // Settings Panel
+          showSettings && h('div', {className:'settings-panel'},
+            h('form', {onSubmit:handleSaveCreds},
+              h('div', {style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'0.75rem'}},
+                h('h3', {style:{fontFamily:'var(--font-title)',fontWeight:700,fontSize:'1.05rem'}}, '⚙️ Settings'),
+                h('div', {style:{display:'flex',gap:'0.75rem',fontSize:'0.82rem',color:'var(--text-sub)',alignItems:'center'}},
+                  isAdmin && h('span', null, `🌐 ${domainShort}`),
+                  h('span', null, `👤 ${creds.username||'?'}`),
+                  creds.exp_date && h('span', {
+                    style: {
+                      background: 'hsla(152, 62%, 38%, 0.1)',
+                      color: 'var(--green)',
+                      padding: '0.15rem 0.45rem',
+                      borderRadius: '4px',
+                      fontWeight: 'bold',
+                      fontSize: '0.75rem'
+                    }
+                  }, `📅 Expiry: ${creds.exp_date}`)
+                )
+              ),
+              h('div', {className:'settings-grid'},
+                isEditAdmin && h('div', {className:'form-group'},
+                  h('label', {className:'form-label'}, 'Server Domain'),
+                  h('input', {className:'form-input',type:'text',value:editCreds.domain,onChange:e=>setEditCreds(p=>({...p,domain:e.target.value})),placeholder:'http://server.com',required:true})
+                ),
+                h('div', {className:'form-group'},
+                  h('label', {className:'form-label'}, 'Username'),
+                  h('input', {className:'form-input',type:'text',value:editCreds.username,onChange:e=>setEditCreds(p=>({...p,username:e.target.value})),required:true})
+                ),
+                h('div', {className:'form-group'},
+                  h('label', {className:'form-label'}, 'Password'),
+                  h('input', {className:'form-input',type:'password',value:editCreds.password,onChange:e=>setEditCreds(p=>({...p,password:e.target.value})),required:true})
+                ),
+                h('div', {className:'form-group'},
+                  h('label', {className:'form-label'}, '📁 Download Folder'),
+                  h('div', {className:'save-dir-row'},
+                    h('div', {className:'save-dir-display', title:saveDir}, saveDir||'Default Downloads'),
+                    h('button', {type:'button',className:'btn btn-ghost btn-sm',onClick:handleBrowse}, 'Browse...')
+                  )
+                )
+              ),
+              h('div', null, h('button', {type:'submit',className:'btn btn-indigo'}, '💾 Save Settings')),
+              h('div', {
+                style: {
+                  borderTop: '1px solid var(--border)',
+                  paddingTop: '1rem',
+                  marginTop: '1rem',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }
+              },
+                h('div', null,
+                  h('h4', {style:{fontSize:'0.85rem',fontWeight:700}}, `🔄 Software Update ${appVersion ? '(Current: v' + appVersion + ')' : ''}`),
+                  h('p', {style:{fontSize:'0.72rem',color:'var(--text-sub)'}}, 'Check and download the latest version from GitHub.')
+                ),
+                h('button', {
+                  type: 'button',
+                  className: `btn ${updating ? 'btn-ghost' : 'btn-indigo'}`,
+                  style: { color: updating ? 'var(--text-dim)' : '#fff' },
+                  disabled: updating,
+                  onClick: handleUpdate
+                }, updating ? 'Updating...' : 'Check for Updates')
+              ),
+
+            )
+          ),
+
+
+
+          // Section Header
+          h('div', {className:'section-bar'},
+            h('div', null,
+              h('h2', {className:'section-title'},
+                activeTab==='movies' ? '🎬 Movies' : activeTab==='series' ? '📺 TV Shows' : activeTab==='live' ? '📡 Live TV' : activeTab==='favorites' ? '❤️ Favorites' : activeTab==='library' ? '📂 My Library' : '🕒 Recent Watch History'
+              ),
+              total > 0 && h('span', {className:'section-count'}, `${total.toLocaleString()} items found`)
+            ),
+            activeTab === 'library' && h('button', {
+              className: 'btn btn-indigo btn-sm',
+              onClick: handleImportLibrary,
+              style: { marginLeft: 'auto' }
+            }, '📥 Import Video'),
+            activeTab === 'recents' && total > 0 && h('button', {
+              className: 'btn btn-ghost btn-sm',
+              style: { color: 'var(--red)', borderColor: 'hsla(4,82%,52%,0.3)', marginLeft: 'auto' },
+              onClick: handleClearAllRecents
+            }, '🗑️ Clear History')
+          ),
+
+          // Grid or List
+          loading
+            ? h('div', {className:'spinner-wrap'}, h('div',{className:'spinner'}), h('p',{className:'spinner-label'},'Loading...'))
+            : items.length > 0
+              ? activeTab === 'library'
+                ? h('div', {className:'library-list'},
+                    items.map(item => h(LibraryItem, {
+                      key: item.name,
+                      item,
+                      onWatch: () => handleWatchLibrary(item),
+                      onDelete: () => handleDeleteLibrary(item),
+                      onClear: () => handleClearLibrary(item)
+                    }))
+                  )
+                : h('div', {className:'media-grid'},
+                    items.map((item, idx) => {
+                      const itemType = activeTab==='movies'?'movie':activeTab==='series'?'series':activeTab==='live'?'live':(item.type || 'unknown');
+                      const itemId = item.stream_id || item.series_id || item.id || `idx_${idx}`;
+                      return h(MediaCard, {
+                        key: `${itemType}_${itemId}`,
+                        item, type: itemType,
+                        isFav: isFavorite(itemId, itemType),
+                        onToggleFav: () => toggleFavorite(item, itemType),
+                        catName: catNameFor(item),
+                        onRemove: activeTab === 'recents' ? () => handleRemoveRecent(item, itemType) : null,
+                        onClick: (i) => { (itemType==='series') ? setSeriesItem(i) : setDetailItem(i); }
+                      });
+                    })
+                  )
+              : h('div', {className:'empty-state'}, h('span',{className:'empty-state-icon'},'📂'), h('p',null, activeTab === 'library' ? 'Your local library is empty.' : `No ${activeTab} found.`)),
+          h(Pagination, {page, pages:totalPages, total, onPage:setPage})
+        ),
+
+        // ── Download Bar (Fixed, always visible) ──
+        downloads.length > 0 && h(DownloadBar, {downloads, onCancel:handleCancelDownload, onClear:handleClearDownload, onResume:handleResumeDownload}),
+
+        // ── Modals ──
+        detailItem && h(ItemDetailModal, {
+          item:detailItem,
+          type: activeTab==='live'?'live':activeTab==='movies'?'movie':detailItem.type,
+          creds, catName:catNameFor(detailItem),
+          isFav: isFavorite(detailItem.stream_id || detailItem.id, activeTab==='live'?'live':activeTab==='movies'?'movie':detailItem.type),
+          onToggleFav: () => toggleFavorite(detailItem, activeTab==='live'?'live':activeTab==='movies'?'movie':detailItem.type),
+          onClose:()=>setDetailItem(null),
+          onDownload:handleDownload, onCopyLink:handleCopyLink,
+          onRecord:handleRecord,
+          onSelectCategory: handleSelectCategory,
+          onWatch: () => {
+            const targetType = activeTab === 'live' ? 'live' : activeTab === 'movies' ? 'movie' : detailItem.type;
+            let playlistItems = items;
+            if (activeTab === 'favorites' || activeTab === 'recents') {
+              playlistItems = items.filter(itm => itm.type !== 'series');
+            }
+            
+            const playlist = playlistItems.map(itm => {
+              const itmId = itm.stream_id || itm.id;
+              const itmType = itm.type || targetType;
+              let itmUrl = '';
+              if (itmType === 'movie') {
+                itmUrl = getApiUrl(`/api/stream?url=${encodeURIComponent(`${creds.domain}/movie/${creds.username}/${creds.password}/${itmId}.m3u8`)}`);
+              } else if (itmType === 'live') {
+                itmUrl = getApiUrl(`/api/stream?url=${encodeURIComponent(`${creds.domain}/live/${creds.username}/${creds.password}/${itmId}.m3u8`)}`);
+              }
+              return {
+                title: itm.name,
+                url: itmUrl,
+                streamId: itmId,
+                isLive: itmType === 'live',
+                type: itmType,
+                rawItem: itm
+              };
+            });
+            
+            const targetId = detailItem.stream_id || detailItem.id;
+            const idx = playlistItems.findIndex(itm => (itm.stream_id || itm.id) === targetId);
+            
+            handleWatch(detailItem, targetType, null, null, playlist, idx >= 0 ? idx : 0);
+          }
+        }),
+        seriesItem && h(SeriesModal, {
+          item:seriesItem, creds, catName:catNameFor(seriesItem),
+          isFav: isFavorite(seriesItem.series_id || seriesItem.id, 'series'),
+          onToggleFav: () => toggleFavorite(seriesItem, 'series'),
+          onClose:()=>setSeriesItem(null),
+          onDownload:handleDownload, onCopyLink:handleCopyLink,
+          onSelectCategory: handleSelectCategory,
+          onWatch: (idx, episodesList, seasonNum) => {
+            const playlist = episodesList.map(ep => {
+              const code = `S${String(seasonNum).padStart(2,'0')}E${String(ep.episode_num||ep.id||0).padStart(2,'0')}`;
+              const title = ep.title || `Episode ${ep.episode_num || ep.id}`;
+              const fname = `${seriesItem.name} - ${code}`;
+              const epUrl = getApiUrl(`/api/stream?url=${encodeURIComponent(`${creds.domain}/series/${creds.username}/${creds.password}/${ep.id}.m3u8`)}`);
+              return {
+                title: fname,
+                url: epUrl,
+                streamId: ep.id,
+                isLive: false,
+                type: 'series',
+                rawItem: ep,
+                parentItem: seriesItem
+              };
+            });
+            
+            const currentEp = episodesList[idx];
+            const code = `S${String(seasonNum).padStart(2,'0')}E${String(currentEp.episode_num||currentEp.id||0).padStart(2,'0')}`;
+            const title = currentEp.title || `Episode ${currentEp.episode_num || currentEp.id}`;
+            const fname = `${seriesItem.name} - ${code}`;
+            const epUrl = getApiUrl(`/api/stream?url=${encodeURIComponent(`${creds.domain}/series/${creds.username}/${creds.password}/${currentEp.id}.m3u8`)}`);
+            
+            handleWatch(seriesItem, 'series', fname, epUrl, playlist, idx);
+          }
+        }),
+        playerState && h(VideoPlayer, {
+          title:playerState.title, url:playerState.url,
+          streamId:playerState.streamId, isLive:playerState.isLive,
+          downloads:downloads, onRecord:handleRecord, onCancelRecord:handleCancelDownload,
+          onClose:()=>setPlayerState(null),
+          onNext: playNext,
+          onPrev: playPrev,
+          hasNext: activePlaylist && activePlaylist.length > 1,
+          hasPrev: activePlaylist && activePlaylist.length > 1
+        })
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(h(App, null));
+  </script>
+</body>
+</html>
