@@ -56,6 +56,48 @@
       --font-title: 'Outfit', var(--font);
     }
 
+    /* ── Dark / Night mode ── */
+    html[data-theme="dark"] {
+      --bg-deep:    hsl(222, 28%, 7%);
+      --bg-base:    hsl(222, 24%, 10%);
+      --bg-card:    hsl(222, 22%, 14%);
+      --bg-card2:   hsl(222, 20%, 17%);
+      --bg-input:   hsl(222, 20%, 16%);
+
+      --indigo:     hsl(242, 85%, 70%);
+      --indigo-glow: hsla(242, 85%, 70%, 0.30);
+      --gold:       hsl(43, 95%, 58%);
+      --gold-dark:  hsl(38, 90%, 48%);
+      --gold-glow:  hsla(43, 95%, 58%, 0.25);
+      --cyan:       hsl(196, 85%, 56%);
+      --cyan-glow:  hsla(196, 85%, 56%, 0.25);
+      --red:        hsl(4, 85%, 63%);
+      --red-glow:   hsla(4, 85%, 63%, 0.28);
+      --green:      hsl(152, 60%, 50%);
+      --purple:     hsl(270, 78%, 68%);
+      --pink:       hsl(330, 82%, 66%);
+
+      --text-main:  hsl(220, 25%, 95%);
+      --text-sub:   hsl(220, 14%, 70%);
+      --text-dim:   hsl(220, 12%, 50%);
+
+      --border:     hsl(222, 18%, 23%);
+      --border-strong: hsl(222, 18%, 33%);
+      --border-indigo: hsla(242, 85%, 70%, 0.4);
+      --border-gold:   hsla(43, 95%, 58%, 0.4);
+
+      --glass:      rgba(18, 22, 33, 0.92);
+      --shadow-sm:  0 1px 4px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.28);
+      --shadow-md:  0 4px 16px rgba(0,0,0,0.45), 0 2px 6px rgba(0,0,0,0.32);
+      --shadow-lg:  0 12px 40px rgba(0,0,0,0.6), 0 4px 12px rgba(0,0,0,0.4);
+    }
+    html[data-theme="dark"] body {
+      background-image:
+        radial-gradient(ellipse 90% 60% at 15% -5%,  hsla(242, 70%, 22%, 0.55) 0%, transparent 55%),
+        radial-gradient(ellipse 70% 50% at 85% 105%, hsla(196, 70%, 22%, 0.45) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 35% at 65%  25%, hsla(270, 60%, 25%, 0.40) 0%, transparent 50%);
+    }
+
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
@@ -133,7 +175,7 @@
       cursor: pointer; white-space: nowrap;
       transition: all 0.2s var(--ease);
     }
-    .nav-tab:hover { color: var(--text-main); background: hsl(220, 20%, 93%); }
+    .nav-tab:hover { color: var(--text-main); background: var(--border); }
     .nav-tab.active {
       background: linear-gradient(135deg, hsla(242, 80%, 58%, 0.1), hsla(330, 80%, 55%, 0.06));
       border-color: var(--border-indigo);
@@ -170,11 +212,11 @@
     }
     .btn-cyan:hover { transform: translateY(-1px); filter: brightness(1.05); }
     .btn-ghost {
-      background: hsl(220, 20%, 94%);
+      background: var(--bg-card2);
       color: var(--text-main);
       border: 1px solid var(--border);
     }
-    .btn-ghost:hover { background: hsl(220, 20%, 89%); border-color: var(--border-strong); }
+    .btn-ghost:hover { background: var(--border); border-color: var(--border-strong); }
     .btn-red {
       background: hsla(4, 82%, 52%, 0.1);
       color: var(--red);
@@ -533,7 +575,7 @@
     .dl-status-badge.recording   { background: hsla(4,82%,52%,0.1);   color: var(--red);    border: 1px solid hsla(4,82%,52%,0.25); animation: recPulse 1.2s ease-in-out infinite; }
     .dl-status-badge.completed   { background: hsla(152,62%,38%,0.1); color: var(--green);  border: 1px solid hsla(152,62%,38%,0.25); }
     .dl-status-badge.failed      { background: hsla(4,82%,52%,0.1);   color: var(--red);    border: 1px solid hsla(4,82%,52%,0.25); }
-    .dl-status-badge.cancelled   { background: hsl(220,15%,94%); color: var(--text-dim); border: 1px solid var(--border); }
+    .dl-status-badge.cancelled   { background: var(--bg-card2); color: var(--text-dim); border: 1px solid var(--border); }
     @keyframes recPulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
     .dl-progress-wrap { width: 100px; flex-shrink: 0; }
     .dl-track { height: 4px; background: var(--bg-base); border-radius: 2px; overflow: hidden; }
@@ -730,6 +772,23 @@
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 
+  <!-- Google Cast SDK: callback must be defined BEFORE the sender script loads -->
+  <script>
+    window.__castReady = false;
+    window.__onGCastApiAvailable = function (isAvailable) {
+      if (isAvailable && window.cast && window.cast.framework) {
+        try {
+          cast.framework.CastContext.getInstance().setOptions({
+            receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+            autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+          });
+          window.__castReady = true;
+        } catch (e) { console.warn('Cast init failed', e); }
+      }
+    };
+  </script>
+  <script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1"></script>
+
   <script>
     const { useState, useEffect, useRef, useCallback } = React;
     const h = React.createElement;
@@ -740,6 +799,10 @@
         : '';
       return base + path;
     };
+    // Build a playable stream URL by type+id. Credentials stay on the backend —
+    // the browser never sees the provider password.
+    const streamSrc = (type, id) => getApiUrl(`/api/stream?type=${encodeURIComponent(type)}&id=${encodeURIComponent(id)}`);
+
     const apiFetch = (path, options = {}) => {
       let url = getApiUrl(path);
       const method = (options.method || 'GET').toUpperCase();
@@ -748,6 +811,20 @@
         url += `${separator}_t=${Date.now()}`;
       }
       return fetch(url, options);
+    };
+
+    // Deterministic color + initials for channels/items that have no logo,
+    // so each tile looks distinct instead of an identical generic icon.
+    const nameToHue = (str) => {
+      let hash = 0;
+      for (let i = 0; i < (str || '').length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      return Math.abs(hash) % 360;
+    };
+    const getInitials = (name) => {
+      const words = (name || '').replace(/[^\p{L}\p{N}\s]/gu, '').trim().split(/\s+/).filter(Boolean);
+      if (words.length === 0) return '?';
+      if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+      return (words[0][0] + words[1][0]).toUpperCase();
     };
 
     // Helper to format seconds to HH:MM:SS or MM:SS
@@ -771,40 +848,99 @@
       const [errMsg, setErrMsg]  = useState('');
       const [showArrows, setShowArrows] = useState(false);
       const mouseTimerRef = useRef(null);
+      const [reconnecting, setReconnecting] = useState(false);   // smart reconnect overlay
+      const [netSpeed, setNetSpeed] = useState(0);               // estimated Mbps
+      const retryRef = useRef(0);                                // reconnect attempt counter
+      const retryTimerRef = useRef(null);
 
       // Chromecast/AirPlay states & functions
       const [castState, setCastState] = useState('disconnected'); // 'disconnected', 'connecting', 'connected'
 
-      const handleCast = () => {
+      const handleCast = async () => {
         const video = videoRef.current;
-        if (!video) return;
-        if (video.remote && typeof video.remote.prompt === 'function') {
-          video.remote.prompt().catch(()=>{});
-        } else if (video.webkitShowPlaybackTargetPicker) {
-          video.webkitShowPlaybackTargetPicker();
-        } else {
-          toast('Casting is not supported on this browser', 'info');
+
+        // The player URL is proxied through localhost, which a Cast device on the
+        // network cannot reach. Ask the backend for the direct provider URL.
+        let directUrl = '';
+        try {
+          const qs = new URLSearchParams((url || '').split('?')[1] || '');
+          const t = qs.get('type'), i = qs.get('id');
+          if (t && i) {
+            const r = await apiFetch(`/api/direct-url?type=${encodeURIComponent(t)}&id=${encodeURIComponent(i)}`);
+            if (r.ok) { const d = await r.json(); directUrl = d.url || ''; }
+          }
+        } catch (e) {}
+        if (!directUrl) { toast('Casting is unavailable for this stream', 'info'); return; }
+
+        // 1) Google Cast (Chrome + Chromecast on the same network)
+        if (window.__castReady && window.cast && window.cast.framework) {
+          try {
+            const context = cast.framework.CastContext.getInstance();
+            await context.requestSession(); // opens the device picker
+            const session = context.getCurrentSession();
+            if (!session) { toast('No cast device selected', 'info'); return; }
+            const mediaInfo = new chrome.cast.media.MediaInfo(directUrl, 'application/x-mpegURL');
+            mediaInfo.streamType = isLive
+              ? chrome.cast.media.StreamType.LIVE
+              : chrome.cast.media.StreamType.BUFFERED;
+            mediaInfo.metadata = new chrome.cast.media.GenericMediaMetadata();
+            mediaInfo.metadata.title = title;
+            await session.loadMedia(new chrome.cast.media.LoadRequest(mediaInfo));
+            toast('Casting "' + title + '"', 'success');
+            return;
+          } catch (err) {
+            if (err === 'cancel' || (err && err.code === 'cancel')) return; // picker closed
+            console.warn('Cast error', err);
+            toast('Could not cast: ' + ((err && (err.description || err.code || err.message)) || 'unknown error'), 'error');
+            return;
+          }
         }
+
+        // 2) AirPlay (Safari / Apple devices)
+        if (video && typeof video.webkitShowPlaybackTargetPicker === 'function') {
+          video.webkitShowPlaybackTargetPicker();
+          return;
+        }
+
+        // 3) Nothing available
+        toast('Casting needs Google Chrome with a Chromecast on the same network (AirPlay works in Safari)', 'info');
       };
 
       useEffect(() => {
         const video = videoRef.current;
-        if (!video) return;
-        const handleStateChange = () => {
-          if (video.remote && video.remote.state) {
-            setCastState(video.remote.state);
-          }
+
+        // Google Cast session state → drives the button appearance
+        let castContext = null;
+        const onCastSession = (event) => {
+          const S = cast.framework.SessionState;
+          if (event.sessionState === S.SESSION_STARTING) setCastState('connecting');
+          else if (event.sessionState === S.SESSION_STARTED || event.sessionState === S.SESSION_RESUMED) setCastState('connected');
+          else if (event.sessionState === S.SESSION_ENDED) setCastState('disconnected');
         };
-        if (video.remote) {
+        if (window.cast && window.cast.framework) {
+          try {
+            castContext = cast.framework.CastContext.getInstance();
+            castContext.addEventListener(cast.framework.CastContextEventType.SESSION_STATE_CHANGED, onCastSession);
+            if (castContext.getCurrentSession()) setCastState('connected');
+          } catch (e) {}
+        }
+
+        // Remote Playback (AirPlay) state
+        const handleStateChange = () => {
+          if (video && video.remote && video.remote.state) setCastState(video.remote.state);
+        };
+        if (video && video.remote) {
           video.remote.addEventListener('connect', handleStateChange);
           video.remote.addEventListener('disconnect', handleStateChange);
           video.remote.addEventListener('connecting', handleStateChange);
-          if (video.remote.state) {
-            setCastState(video.remote.state);
-          }
+          if (video.remote.state) setCastState(video.remote.state);
         }
+
         return () => {
-          if (video.remote) {
+          if (castContext) {
+            try { castContext.removeEventListener(cast.framework.CastContextEventType.SESSION_STATE_CHANGED, onCastSession); } catch (e) {}
+          }
+          if (video && video.remote) {
             video.remote.removeEventListener('connect', handleStateChange);
             video.remote.removeEventListener('disconnect', handleStateChange);
             video.remote.removeEventListener('connecting', handleStateChange);
@@ -857,23 +993,63 @@
       useEffect(() => {
         const video = videoRef.current;
         if (!video || !url) return;
-        const cleanup = () => { if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; } };
+        retryRef.current = 0;
+        setReconnecting(false);
+        const cleanup = () => {
+          if (retryTimerRef.current) { clearTimeout(retryTimerRef.current); retryTimerRef.current = null; }
+          if (hlsRef.current) { hlsRef.current.destroy(); hlsRef.current = null; }
+        };
 
         if (typeof Hls !== 'undefined' && Hls.isSupported()) {
-          const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
+          // Live tuning: keep close to the live edge to minimise delay (sports);
+          // VOD uses default buffering for smoother seeking.
+          const hls = new Hls(isLive ? {
+            enableWorker: true,
+            lowLatencyMode: true,
+            liveSyncDurationCount: 3,
+            liveMaxLatencyDurationCount: 8,
+            backBufferLength: 30
+          } : {
+            enableWorker: true,
+            lowLatencyMode: false
+          });
           hlsRef.current = hls;
           hls.loadSource(url);
           hls.attachMedia(video);
-          hls.on(Hls.Events.MANIFEST_PARSED, () => { 
-            setStatus('playing'); 
-            video.play().catch(()=>{}); 
+          hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            retryRef.current = 0;
+            setReconnecting(false);
+            setStatus('playing');
+            video.play().catch(()=>{});
           });
-          hls.on(Hls.Events.ERROR, (_, data) => { if (data.fatal) { setStatus('error'); setErrMsg(`Stream error (${data.type})`); } });
+          hls.on(Hls.Events.ERROR, (_, data) => {
+            if (!data.fatal) return;
+            // Smart reconnect: try to recover from network/media errors with backoff
+            // before giving up, instead of failing on the first glitch.
+            if (retryRef.current < 6) {
+              retryRef.current += 1;
+              setReconnecting(true);
+              const delay = Math.min(1000 * retryRef.current, 5000);
+              if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+                try { hls.recoverMediaError(); return; } catch(e) {}
+              }
+              retryTimerRef.current = setTimeout(() => {
+                try { hls.startLoad(); } catch(e) {
+                  try { hls.destroy(); } catch(e2){}
+                  hlsRef.current = null;
+                }
+              }, delay);
+            } else {
+              setReconnecting(false);
+              setStatus('error');
+              setErrMsg(`Stream error (${data.type}) — gave up after several retries`);
+            }
+          });
         } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
           video.src = url;
-          video.addEventListener('loadedmetadata', () => { 
-            setStatus('playing'); 
-            video.play().catch(()=>{}); 
+          video.addEventListener('loadedmetadata', () => {
+            setStatus('playing');
+            video.play().catch(()=>{});
           });
           video.addEventListener('error', () => { setStatus('error'); setErrMsg('Native playback failed.'); });
         } else {
@@ -882,6 +1058,17 @@
         }
         return cleanup;
       }, [url]);
+
+      // Live network-speed estimate (from hls.js bandwidth estimate)
+      useEffect(() => {
+        const iv = setInterval(() => {
+          const hls = hlsRef.current;
+          if (hls && hls.bandwidthEstimate) {
+            setNetSpeed(hls.bandwidthEstimate / 1e6); // bits → Mbps
+          }
+        }, 2000);
+        return () => clearInterval(iv);
+      }, []);
 
       useEffect(() => {
         const handleKeyDown = (e) => {
@@ -955,12 +1142,21 @@
         h('div', { className: 'player-header' },
           h('div', { className: 'player-title' }, '▶ ' + title),
           h('div', { style: { display: 'flex', gap: '0.5rem', alignItems: 'center' } },
+            netSpeed > 0 && h('div', {
+              title: 'Estimated network speed',
+              style: {
+                display: 'flex', alignItems: 'center', gap: '0.3rem',
+                color: '#fff', fontSize: '0.78rem', fontWeight: 700,
+                background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '999px', padding: '0.25rem 0.6rem'
+              }
+            }, '📶 ' + (netSpeed >= 1 ? netSpeed.toFixed(1) + ' Mbps' : (netSpeed * 1000).toFixed(0) + ' Kbps')),
             h('button', {
               className: 'btn btn-ghost btn-sm',
               style: {
                 color: '#fff',
-                background: castState === 'connected' 
-                  ? 'linear-gradient(135deg, var(--indigo), var(--purple))' 
+                background: castState === 'connected'
+                  ? 'linear-gradient(135deg, var(--indigo), var(--purple))'
                   : castState === 'connecting'
                     ? 'rgba(241, 196, 15, 0.35)'
                     : 'rgba(255,255,255,0.12)',
@@ -984,6 +1180,17 @@
           status === 'loading' && h('div', { className: 'player-loading' },
             h('div', { className: 'spinner', style:{borderTopColor:'white'} }),
             h('span', null, 'Connecting to stream...')
+          ),
+          reconnecting && status !== 'error' && h('div', {
+            style: {
+              position: 'absolute', top: '1rem', left: '50%', transform: 'translateX(-50%)',
+              display: 'flex', alignItems: 'center', gap: '0.5rem', zIndex: 20,
+              background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '0.5rem 1rem',
+              borderRadius: '999px', fontSize: '0.85rem', fontWeight: 600
+            }
+          },
+            h('div', { className: 'spinner', style:{ width:'16px', height:'16px', borderTopColor:'white' } }),
+            'Reconnecting…'
           ),
           status === 'error' && h('div', { className: 'player-error' },
             h('span', { style:{fontSize:'2.5rem'} }, '⚠️'),
@@ -1184,8 +1391,7 @@
         return () => document.removeEventListener('keydown', fn);
       }, []);
 
-      const toProxy = (u) => getApiUrl(`/api/stream?url=${encodeURIComponent(u)}`);
-      const streamUrl = (epId) => toProxy(`${creds.domain}/series/${creds.username}/${creds.password}/${epId}.m3u8`);
+      const streamUrl = (epId) => streamSrc('series', epId);
       
       const seriesCover = item.stream_icon || item.cover;
 
@@ -1234,9 +1440,7 @@
                             ),
                             h('div', {className:'ep-actions'},
                               h('button', {className:'btn btn-cyan btn-sm', onClick:()=>onWatch(idx, episodes, activeSeason)}, '▶'),
-                              h('button', {className:'btn btn-gold btn-sm', onClick:()=>onDownload('series', ep.id, fname, null)}, '⬇'),
-                              h('button', {className:'btn btn-ghost btn-sm', onClick:()=>onDownload('series', ep.id, fname, 10*1024*1024)}, '📋'),
-                              h('button', {className:'btn btn-ghost btn-sm', onClick:()=>onCopyLink('series', ep.id, ep.container_extension||'mp4')}, '🔗')
+                              h('button', {className:'btn btn-gold btn-sm', onClick:()=>onDownload('series', ep.id, fname, null)}, '⬇')
                             )
                           );
                         })
@@ -1249,12 +1453,7 @@
     }
 
     function ItemDetailModal({ item, type, creds, catName, isFav, onToggleFav, onClose, onDownload, onCopyLink, onWatch, onRecord, onSelectCategory }) {
-      const toProxy = (u) => getApiUrl(`/api/stream?url=${encodeURIComponent(u)}`);
-      const streamUrl = toProxy(
-        type === 'movie'
-          ? `${creds.domain}/movie/${creds.username}/${creds.password}/${item.stream_id}.m3u8`
-          : `${creds.domain}/live/${creds.username}/${creds.password}/${item.stream_id}.m3u8`
-      );
+      const streamUrl = streamSrc(type === 'movie' ? 'movie' : 'live', item.stream_id);
 
       useEffect(() => {
         const fn = e => { if (e.key==='Escape') onClose(); };
@@ -1291,9 +1490,7 @@
                 onClick: onToggleFav
               }, isFav ? '❤️ Favorite' : '🤍 Add Favorite'),
               type==='movie' && h('button', {className:'btn btn-gold', onClick:()=>{onDownload('movie',item.stream_id,item.name,null);onClose();}}, '⬇ Download Full'),
-              type==='movie' && h('button', {className:'btn btn-ghost', onClick:()=>{onDownload('movie',item.stream_id,item.name,10*1024*1024);onClose();}}, '📋 10MB Sample'),
-              type==='live' && h('button', {className:'btn btn-gold', onClick:()=>{onRecord(item.stream_id,item.name);onClose();}}, '⏺ Record Live'),
-              h('button', {className:'btn btn-ghost', onClick:()=>onCopyLink(type,item.stream_id,item.container_extension||'ts')}, '🔗 Copy Link')
+              type==='live' && h('button', {className:'btn btn-gold', onClick:()=>{onRecord(item.stream_id,item.name);onClose();}}, '⏺ Record Live')
             ),
             catName && h('div', {style:{display:'flex',gap:'0.5rem',flexWrap:'wrap'}},
               h('span', {
@@ -1311,7 +1508,6 @@
     // ── Media Card ──
     function MediaCard({ item, type, catName, isFav, onRemove, onClick, onToggleFav, autoCheck, checkTriggerToken, progress }) {
       const [imgErr, setImgErr] = useState(false);
-      const icon = type==='movie' ? '🎬' : type==='series' ? '📺' : '📡';
       const badgeCls = type==='movie' ? 'cat-badge movie' : type==='series' ? 'cat-badge series' : 'cat-badge live';
 
       // Stream checker states
@@ -1350,24 +1546,31 @@
           !imgErr && cardCover
             ? h('img', {src:cardCover, alt:item.name, loading:'lazy', onError:()=>setImgErr(true)})
             : null,
-          (imgErr || !cardCover) && h('div', {className:'card-poster-fallback'},
-            h('span', null, icon),
-            h('small', {style:{fontSize:'0.7rem',textAlign:'center',padding:'0 0.5rem',color:'var(--text-dim)'}}, item.name)
-          ),
+          (imgErr || !cardCover) && (() => {
+            const hue = nameToHue(item.name);
+            return h('div', {
+              className:'card-poster-fallback',
+              style:{ background:`linear-gradient(135deg, hsl(${hue},48%,34%), hsl(${(hue+45)%360},55%,18%))` }
+            },
+              h('div', {style:{fontSize:'2.1rem',fontWeight:800,letterSpacing:'1px',color:'rgba(255,255,255,0.95)',textShadow:'0 2px 8px rgba(0,0,0,0.45)'}}, getInitials(item.name)),
+              h('small', {style:{fontSize:'0.7rem',textAlign:'center',padding:'0 0.5rem',color:'rgba(255,255,255,0.78)'}}, item.name)
+            );
+          })(),
           type === 'live' && h('div', {
             style: {
               position: 'absolute', top: '0.5rem', left: '0.5rem',
               display: 'flex', alignItems: 'center', gap: '0.35rem', zIndex: 10
             }
           },
-            item.num && h('div', {
+            (item.gnum || item.num) && h('div', {
+              title: 'Channel number — type it in "Go to #"',
               style: {
-                background: 'rgba(255,255,255,0.9)', color: 'var(--text-sub)',
-                fontSize: '0.68rem', fontFamily: 'var(--font)', fontWeight: 700,
-                padding: '0.15rem 0.4rem', borderRadius: 'var(--radius-sm)',
-                boxShadow: 'var(--shadow-sm)'
+                background: 'linear-gradient(135deg, var(--indigo), var(--purple))', color: '#fff',
+                fontSize: '0.8rem', fontFamily: 'var(--font-title)', fontWeight: 800,
+                padding: '0.2rem 0.5rem', borderRadius: 'var(--radius-sm)',
+                boxShadow: '0 2px 8px var(--indigo-glow)', letterSpacing: '0.3px'
               }
-            }, `#${item.num}`),
+            }, `#${item.gnum || item.num}`),
             h('div', {
               style: {
                 display: 'flex', alignItems: 'center', gap: '0.3rem',
@@ -1460,7 +1663,7 @@
       const [volume, setVolume] = useState(1);
       const [status, setStatus] = useState('loading');
 
-      const streamUrl = getApiUrl(`/api/stream?url=${encodeURIComponent(`${creds.domain}/live/${creds.username}/${creds.password}/${channel.stream_id}.m3u8`)}`);
+      const streamUrl = streamSrc('live', channel.stream_id);
 
       useEffect(() => {
         const video = videoRef.current;
@@ -1763,6 +1966,54 @@
       const [autoCheck, setAutoCheck] = useState(() => localStorage.getItem('hub_auto_check') || 'disabled');
       const [checkTriggerToken, setCheckTriggerToken] = useState(1);
 
+      // App lock (password gate for network devices)
+      const [authState, setAuthState] = useState({checked:false, locked:false, authorized:false, local:false});
+      const [loginPw, setLoginPw] = useState('');
+      const [loginErr, setLoginErr] = useState('');
+      const [lockPw, setLockPw] = useState('');
+
+      // Channel-number entry (Live TV)
+      const [chanNum, setChanNum] = useState('');
+
+      // Theme (light / dark night mode)
+      const [theme, setTheme] = useState(() => localStorage.getItem('hub_theme') || 'light');
+      useEffect(() => {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('hub_theme', theme);
+      }, [theme]);
+
+      const checkAuth = async () => {
+        try {
+          const r = await apiFetch('/api/auth-status');
+          if (r.ok) { const d = await r.json(); setAuthState({checked:true, locked:!!d.locked, authorized:!!d.authorized, local:!!d.local}); }
+          else setAuthState({checked:true, locked:false, authorized:true, local:false});
+        } catch(e) { setAuthState({checked:true, locked:false, authorized:true, local:false}); }
+      };
+      useEffect(() => { checkAuth(); }, []);
+
+      const handleLogin = async (e) => {
+        e.preventDefault();
+        setLoginErr('');
+        try {
+          const r = await apiFetch('/api/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({password:loginPw})});
+          if (r.ok) { setLoginPw(''); window.location.reload(); }
+          else setLoginErr('Wrong password ❌');
+        } catch(e) { setLoginErr('Connection error'); }
+      };
+
+      const handleSetAppPassword = async (disable=false) => {
+        if (!disable && !lockPw) { toast('Enter a password first','info'); return; }
+        try {
+          const r = await apiFetch('/api/app-password', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({password: disable ? '' : lockPw})});
+          if (r.ok) {
+            const d = await r.json();
+            setAuthState(s => ({...s, locked: !!d.locked}));
+            setLockPw('');
+            toast(disable ? 'App lock disabled' : 'App password set ✓','success');
+          } else toast('Failed to update app lock','error');
+        } catch(e) { toast('Connection error','error'); }
+      };
+
       useEffect(() => {
         localStorage.setItem('hub_auto_check', autoCheck);
       }, [autoCheck]);
@@ -1876,7 +2127,12 @@
         return () => clearTimeout(t);
       }, [search]);
 
-      useEffect(() => { fetchProfiles(); fetchCreds(); fetchFavorites(); const iv = setInterval(fetchDownloads, 1500); return () => clearInterval(iv); }, []);
+      useEffect(() => {
+        if (!authState.checked) return;
+        if (authState.locked && !authState.authorized) return; // wait for login
+        fetchProfiles(); fetchCreds(); fetchFavorites();
+        const iv = setInterval(fetchDownloads, 1500); return () => clearInterval(iv);
+      }, [authState.checked, authState.authorized]);
 
 
 
@@ -2153,6 +2409,19 @@
         }
       };
 
+      const goToChannel = async () => {
+        const n = (chanNum || '').trim();
+        if (!n) return;
+        try {
+          const r = await apiFetch(`/api/live-bynum?num=${encodeURIComponent(n)}`);
+          if (r.ok) {
+            const d = await r.json();
+            if (d.channel) { handleWatch(d.channel, 'live'); setChanNum(''); }
+            else toast(`Channel #${n} not found`, 'info');
+          } else toast('Lookup failed', 'error');
+        } catch(e) { toast('Connection error', 'error'); }
+      };
+
       const handleWatch = (item, type, episodeTitle=null, episodeUrl=null, customPlaylist=null, customIndex=-1) => {
         let title = item.name;
         let url = '';
@@ -2160,9 +2429,9 @@
         let isLive = type === 'live';
         
         if (type === 'movie') {
-          url = getApiUrl(`/api/stream?url=${encodeURIComponent(`${creds.domain}/movie/${creds.username}/${creds.password}/${streamId}.m3u8`)}`);
+          url = streamSrc('movie', streamId);
         } else if (type === 'live') {
-          url = getApiUrl(`/api/stream?url=${encodeURIComponent(`${creds.domain}/live/${creds.username}/${creds.password}/${streamId}.m3u8`)}`);
+          url = streamSrc('live', streamId);
         } else if (type === 'series' && episodeTitle && episodeUrl) {
           title = episodeTitle;
           url = episodeUrl;
@@ -2224,10 +2493,11 @@
         } catch(e) {}
       };
 
-      const fetchMedia = async () => {
+      const fetchMedia = async (attempt = 0) => {
         setItems([]);
         setTotal(0);
         setLoading(true);
+        let willRetry = false;
         try {
           if (activeTab === 'search') {
             if (!debSearch) {
@@ -2282,24 +2552,32 @@
               params.set('sort_by', sortFilter);
             }
             const r = await apiFetch(`/api/${ep}?${params}`);
-            if (r.ok) { 
-              const d = await r.json(); 
-              setItems(d.movies||d.series||d.channels||[]); 
-              setTotalPages(d.pages||1); 
-              setTotal(d.total||0); 
+            if (r.ok) {
+              const d = await r.json();
+              const list = d.movies||d.series||d.channels||[];
+              // Provider sometimes returns nothing on a transient hiccup — auto-retry
+              // a couple of times (bypassing the empty result) before showing "empty".
+              if (list.length === 0 && !debSearch && !catFilter && attempt < 2) {
+                willRetry = true;
+                setTimeout(() => fetchMedia(attempt + 1), 1200);
+              } else {
+                setItems(list);
+                setTotalPages(d.pages||1);
+                setTotal(d.total||0);
+              }
             } else {
               setItems([]);
               setTotalPages(1);
               setTotal(0);
             }
           }
-        } catch(e) { 
+        } catch(e) {
           setItems([]);
           setTotalPages(1);
           setTotal(0);
-          toast(`Error loading ${activeTab}`,'error'); 
+          toast(`Error loading ${activeTab}`,'error');
         }
-        finally { setLoading(false); }
+        finally { if (!willRetry) setLoading(false); }
       };
 
       const fetchDownloads = async () => { try { const r=await apiFetch('/api/downloads'); if(r.ok){const d=await r.json();setDownloads(d.downloads||[]);} } catch(e){} };
@@ -2379,16 +2657,6 @@
           if (r.ok) { toast(`⬇ Download started: ${clean}`,'success'); fetchDownloads(); }
           else toast('Download failed','error');
         } catch(e) { toast('Connection error','error'); }
-      };
-
-      const handleCopyLink = async (mediaType, id, ext) => {
-        const urlP = mediaType==='movie'?'movie':mediaType==='live'?'live':'series';
-        const url = `${creds.domain}/${urlP}/${creds.username}/${creds.password}/${id}.${ext}`;
-        try {
-          const r = await apiFetch('/api/copy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text:url})});
-          toast('🔗 Link copied!','success');
-          if (!r.ok) try { navigator.clipboard.writeText(url); } catch(e2){}
-        } catch(e) { toast('Failed to copy','error'); }
       };
 
       const handleRecord = async (streamId, filename) => {
@@ -2538,10 +2806,12 @@
       };
 
       const handleClearAllRecents = async () => {
-        if (!confirm('Are you sure you want to clear your entire watch history?')) {
+        console.log('[~] handleClearAllRecents triggered');
+        if (!window.confirm('Are you sure you want to clear your entire watch history?')) {
           return;
         }
         try {
+          console.log('[~] Sending clear request to API...');
           const r = await apiFetch('/api/recents/clear', { method: 'POST' });
           if (r.ok) {
             toast('Watch history cleared', 'success');
@@ -2552,6 +2822,7 @@
             toast('Failed to clear history', 'error');
           }
         } catch (e) {
+          console.error('[!] Error clearing history:', e);
           toast('Error clearing history', 'error');
         }
       };
@@ -2568,6 +2839,25 @@
           playbackProgressMap[String(cw.id)] = (cw.position / cw.duration) * 100;
         }
       });
+
+      // ── App lock gate (network devices) ──
+      if (!authState.checked) {
+        return h('div', {style:{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center'}},
+          h('div', {className:'spinner'})
+        );
+      }
+      if (authState.locked && !authState.authorized) {
+        return h('div', {style:{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',padding:'1rem'}},
+          h('form', {onSubmit:handleLogin, style:{background:'var(--bg-card)',border:'1px solid var(--border)',borderRadius:'var(--radius-lg)',boxShadow:'var(--shadow-lg)',padding:'2rem',width:'min(380px,100%)',display:'flex',flexDirection:'column',gap:'1rem'}},
+            h('div', {style:{textAlign:'center',fontSize:'2.5rem'}}, '🔒'),
+            h('h2', {style:{textAlign:'center',margin:0,color:'var(--text-main)',fontSize:'1.2rem'}}, 'Elamir Media Hub'),
+            h('p', {style:{textAlign:'center',margin:0,color:'var(--text-sub)',fontSize:'0.85rem'}}, 'Enter the access password to continue'),
+            h('input', {className:'form-input',type:'password',value:loginPw,autoFocus:true,placeholder:'Password',onChange:e=>{setLoginPw(e.target.value);setLoginErr('');}}),
+            loginErr && h('div', {style:{color:'var(--red)',fontSize:'0.82rem',textAlign:'center'}}, loginErr),
+            h('button', {type:'submit',className:'btn btn-indigo',style:{width:'100%'}}, 'Unlock')
+          )
+        );
+      }
 
       return h('div', {className:'app-shell'},
 
@@ -2604,6 +2894,12 @@
                 }
               }, `📅 Expiry: ${creds.exp_date}`),
               activeDls.length > 0 && h('span', {style:{fontSize:'0.8rem',fontWeight:700,color:'var(--indigo)',padding:'0.3rem 0.6rem',background:'hsla(242,80%,58%,0.1)',borderRadius:'var(--radius-md)',marginRight:'0.5rem'}},`⬇ ${activeDls.length}`),
+              h('button', {
+                className:'btn btn-ghost btn-sm',
+                onClick:()=>setTheme(t => t === 'dark' ? 'light' : 'dark'),
+                title: theme === 'dark' ? 'Switch to light mode' : 'Switch to night mode',
+                style:{marginRight:'0.5rem'}
+              }, theme === 'dark' ? '☀️' : '🌙'),
               h('button', {className:'btn btn-ghost btn-sm', onClick:toggleSettings},
                 showSettings ? '✕ Close' : '⚙️ Settings'
               )
@@ -2631,6 +2927,18 @@
                   placeholder: activeTab === 'search' ? 'Search movies, series, channels...' : `Search ${activeTab==='live'?'channels':activeTab}...`,
                   value:search,
                   onChange:e=>setSearch(e.target.value)
+                })
+              ),
+              activeTab === 'live' && h('div', {className:'search-wrap', style:{maxWidth:'150px'}},
+                h('span', {className:'search-icon', style:{fontWeight:800,fontSize:'1rem',color:'var(--indigo)'}}, '#'),
+                h('input', {
+                  className:'search-input',
+                  type:'number',
+                  inputMode:'numeric',
+                  placeholder:'Go to #',
+                  value:chanNum,
+                  onChange:e=>setChanNum(e.target.value),
+                  onKeyDown:e=>{ if(e.key==='Enter') goToChannel(); }
                 })
               ),
               catOptions.length > 0 && h('select', {className:'cat-select',value:catFilter,onChange:e=>{setCatFilter(e.target.value);setPage(1);}},
@@ -2950,7 +3258,7 @@
                   ),
                   h('div', {className:'form-group'},
                     h('label', {className:'form-label'}, 'Password'),
-                    h('input', {className:'form-input',type:'password',value:editCreds.password,onChange:e=>setEditCreds(p=>({...p,password:e.target.value})),required:true})
+                    h('input', {className:'form-input',type:'password',value:editCreds.password,onChange:e=>setEditCreds(p=>({...p,password:e.target.value})),placeholder:'Leave blank to keep current'})
                   ),
                   h('div', {className:'form-group'},
                     h('label', {className:'form-label'}, '📁 Download Folder'),
@@ -2975,6 +3283,19 @@
                   )
                 ),
                 h('div', {style:{marginTop:'1rem'}}, h('button', {type:'submit',className:'btn btn-indigo'}, '💾 Save Settings'))
+              ),
+
+              // App Lock Section (password gate for network devices)
+              h('div', {style:{borderTop:'1px solid var(--border)',paddingTop:'1rem',marginTop:'1rem'}},
+                h('h4', {style:{fontSize:'0.85rem',fontWeight:700,marginBottom:'0.25rem'}},
+                  `🔒 App Lock — Network Devices ${authState.locked ? '(Enabled ✓)' : '(Disabled)'}`),
+                h('p', {style:{fontSize:'0.72rem',color:'var(--text-sub)',marginBottom:'0.6rem'}},
+                  'Require a password when opening the app from other devices on the network. This computer always opens without a password.'),
+                h('div', {style:{display:'flex',gap:'0.5rem',flexWrap:'wrap',alignItems:'center'}},
+                  h('input', {className:'form-input',type:'password',value:lockPw,placeholder:authState.locked?'New password (to change)':'Set a password',style:{flex:'1',minWidth:'180px'},onChange:e=>setLockPw(e.target.value)}),
+                  h('button', {type:'button',className:'btn btn-indigo',onClick:()=>handleSetAppPassword(false)}, authState.locked?'Change':'Enable'),
+                  authState.locked && h('button', {type:'button',className:'btn btn-ghost',onClick:()=>handleSetAppPassword(true)}, 'Disable')
+                )
               ),
 
               // Software Update Section
@@ -3212,10 +3533,8 @@
                                     const itmId = itm.stream_id || itm.id;
                                     const itmType = itm.type || (itm.stream_id ? 'movie' : 'live');
                                     let itmUrl = '';
-                                    if (itmType === 'movie') {
-                                      itmUrl = getApiUrl(`/api/stream?url=${encodeURIComponent(`${creds.domain}/movie/${creds.username}/${creds.password}/${itmId}.m3u8`)}`);
-                                    } else if (itmType === 'live') {
-                                      itmUrl = getApiUrl(`/api/stream?url=${encodeURIComponent(`${creds.domain}/live/${creds.username}/${creds.password}/${itmId}.m3u8`)}`);
+                                    if (itmType === 'movie' || itmType === 'live') {
+                                      itmUrl = streamSrc(itmType, itmId);
                                     }
                                     return {
                                       title: itm.name,
@@ -3257,7 +3576,7 @@
           isFav: isFavorite(detailItem.stream_id || detailItem.id, activeTab==='live'?'live':activeTab==='movies'?'movie':detailItem.type),
           onToggleFav: () => toggleFavorite(detailItem, activeTab==='live'?'live':activeTab==='movies'?'movie':detailItem.type),
           onClose:()=>setDetailItem(null),
-          onDownload:handleDownload, onCopyLink:handleCopyLink,
+          onDownload:handleDownload,
           onRecord:handleRecord,
           onSelectCategory: handleSelectCategory,
           onWatch: () => {
@@ -3271,10 +3590,8 @@
               const itmId = itm.stream_id || itm.id;
               const itmType = itm.type || targetType;
               let itmUrl = '';
-              if (itmType === 'movie') {
-                itmUrl = getApiUrl(`/api/stream?url=${encodeURIComponent(`${creds.domain}/movie/${creds.username}/${creds.password}/${itmId}.m3u8`)}`);
-              } else if (itmType === 'live') {
-                itmUrl = getApiUrl(`/api/stream?url=${encodeURIComponent(`${creds.domain}/live/${creds.username}/${creds.password}/${itmId}.m3u8`)}`);
+              if (itmType === 'movie' || itmType === 'live') {
+                itmUrl = streamSrc(itmType, itmId);
               }
               return {
                 title: itm.name,
@@ -3298,14 +3615,14 @@
           isFav: isFavorite(seriesItem.series_id || seriesItem.id, 'series'),
           onToggleFav: () => toggleFavorite(seriesItem, 'series'),
           onClose:()=>setSeriesItem(null),
-          onDownload:handleDownload, onCopyLink:handleCopyLink,
+          onDownload:handleDownload,
           onSelectCategory: handleSelectCategory,
           onWatch: (idx, episodesList, seasonNum) => {
             const playlist = episodesList.map(ep => {
               const code = `S${String(seasonNum).padStart(2,'0')}E${String(ep.episode_num||ep.id||0).padStart(2,'0')}`;
               const title = ep.title || `Episode ${ep.episode_num || ep.id}`;
               const fname = `${seriesItem.name} - ${code}`;
-              const epUrl = getApiUrl(`/api/stream?url=${encodeURIComponent(`${creds.domain}/series/${creds.username}/${creds.password}/${ep.id}.m3u8`)}`);
+              const epUrl = streamSrc('series', ep.id);
               return {
                 title: fname,
                 url: epUrl,
@@ -3322,7 +3639,7 @@
             const code = `S${String(seasonNum).padStart(2,'0')}E${String(currentEp.episode_num||currentEp.id||0).padStart(2,'0')}`;
             const title = currentEp.title || `Episode ${currentEp.episode_num || currentEp.id}`;
             const fname = `${seriesItem.name} - ${code}`;
-            const epUrl = getApiUrl(`/api/stream?url=${encodeURIComponent(`${creds.domain}/series/${creds.username}/${creds.password}/${currentEp.id}.m3u8`)}`);
+            const epUrl = streamSrc('series', currentEp.id);
             
             handleWatch(seriesItem, 'series', fname, epUrl, playlist, idx);
           }

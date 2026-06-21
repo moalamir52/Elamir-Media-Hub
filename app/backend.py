@@ -1,6 +1,12 @@
 import os
 import sys
 import json
+import re
+import socket
+import ipaddress
+import hmac
+import hashlib
+import secrets
 import urllib.request
 import urllib.parse
 import threading
@@ -14,6 +20,38 @@ from socketserver import ThreadingMixIn
 script_dir = os.path.dirname(os.path.abspath(__file__))
 if script_dir not in sys.path:
     sys.path.insert(0, script_dir)
+
+def sanitize_filename(name, fallback="download"):
+    """Strip path components and illegal characters so user-supplied names
+    can never escape the save directory (path traversal protection)."""
+    if not name:
+        return fallback
+    name = os.path.basename(str(name))
+    name = re.sub(r'[<>:"/\\|?*\x00-\x1f]', '-', name).strip().strip('.')
+    return name or fallback
+
+def is_safe_remote_url(raw_url):
+    """Return True only for public http(s) hosts. Blocks the proxy from being
+    used to reach loopback/private/link-local addresses (SSRF protection)."""
+    try:
+        parsed = urllib.parse.urlparse(raw_url)
+    except Exception:
+        return False
+    if parsed.scheme not in ("http", "https") or not parsed.hostname:
+        return False
+    try:
+        infos = socket.getaddrinfo(parsed.hostname, None)
+    except Exception:
+        return False
+    for info in infos:
+        try:
+            ip_obj = ipaddress.ip_address(info[4][0])
+        except ValueError:
+            continue
+        if (ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local
+                or ip_obj.is_reserved or ip_obj.is_multicast or ip_obj.is_unspecified):
+            return False
+    return True
 
 def check_and_run_migration():
     import subprocess
@@ -218,7 +256,7 @@ def get_cache_dir():
     os.makedirs(cache_dir, exist_ok=True)
     return cache_dir
 
-VERSION = "1.6"
+VERSION = "1.8"
 
 # Global Configurations & Cache
 CONFIG_FILE = os.path.join(get_base_dir(), "config.json")
@@ -305,6 +343,40 @@ def save_config():
             json.dump(config, f, indent=4)
     except Exception as e:
         print(f"Error saving config: {e}")
+
+# ── App lock (password gate for remote/network devices) ──
+def hash_password(pw):
+    return hashlib.sha256(("emh_lock_salt_" + (pw or "")).encode("utf-8")).hexdigest()
+
+def app_lock_enabled():
+    return bool(config.get("app_password"))
+
+def _get_app_secret():
+    sec = config.get("app_secret")
+    if not sec:
+        sec = secrets.token_hex(32)
+        config["app_secret"] = sec
+        save_config()
+    return sec
+
+def make_auth_token():
+    # Stateless, HMAC-signed token bound to the current password — survives restarts,
+    # and is invalidated automatically when the password (or secret) changes.
+    expiry = int(time.time()) + 30 * 24 * 3600
+    msg = f"{expiry}.{config.get('app_password','')}"
+    sig = hmac.new(_get_app_secret().encode(), msg.encode(), hashlib.sha256).hexdigest()
+    return f"{expiry}.{sig}"
+
+def verify_auth_token(token):
+    try:
+        expiry_s, sig = token.split(".", 1)
+        if int(expiry_s) < time.time():
+            return False
+        msg = f"{expiry_s}.{config.get('app_password','')}"
+        expected = hmac.new(_get_app_secret().encode(), msg.encode(), hashlib.sha256).hexdigest()
+        return hmac.compare_digest(sig, expected)
+    except Exception:
+        return False
 
 def add_to_library_config(filename, size_bytes):
     try:
@@ -540,6 +612,19 @@ def resolve_m3u_url(url):
             return real_url
     return url
 
+def build_stream_url(media_type, stream_id):
+    """Build the authenticated provider stream URL server-side, so credentials
+    never have to be sent to the browser (see /api/stream and /api/direct-url)."""
+    if stream_id is None or stream_id == "":
+        return ""
+    domain = config.get("domain", "")
+    username = config.get("username", "")
+    password = config.get("password", "")
+    if domain == "http://m3u.local":
+        return M3U_STREAMS_MAP.get(stream_id) or M3U_STREAMS_MAP.get(str(stream_id), "")
+    seg = "movie" if media_type == "movie" else "series" if media_type == "series" else "live"
+    return f"{domain}/{seg}/{username}/{password}/{stream_id}.m3u8"
+
 def parse_series_name(title):
     import re
     match = re.search(r'^(.*?)\s+S(\d+)\s*E(\d+)', title, re.IGNORECASE)
@@ -564,10 +649,10 @@ def parse_extinf_line(line):
         attribs["name"] = ""
         attr_part = line[8:].strip()
         
-    pattern = re.compile(r'([\w-]+)\s*=\s*["\']([^"\']*)["\']')
+    pattern = re.compile(r'([\w-]+)\s*=\s*(?:"([^"]*)"|\'([^\']*)\'|([^\s"\'=,]+))')
     for match in pattern.finditer(attr_part):
         key = match.group(1).lower()
-        val = match.group(2)
+        val = match.group(2) or match.group(3) or match.group(4) or ""
         if key in ["tvg-logo", "logo"]:
             attribs["logo"] = val
         elif key in ["group-title", "group"]:
@@ -834,7 +919,7 @@ class DownloadThread(threading.Thread):
         self.dl_id = dl_id
         self.media_type = media_type
         self.stream_id = stream_id
-        self.filename = filename
+        self.filename = sanitize_filename(filename, f"download_{stream_id}")
         self.limit_bytes = limit_bytes
         self.cancel_requested = False
         
@@ -1133,52 +1218,58 @@ class DownloadThread(threading.Thread):
                     "speed_mb_s": 0
                 })
 
-# Native Windows folder selector using PowerShell Forms (avoids Tkinter extraction errors in PyInstaller)
-def show_native_folder_picker():
+# Shared PowerShell that creates a hidden, top-most owner window and forces it to
+# the foreground, so the dialog it owns always opens ABOVE the browser instead of
+# behind it (a background process otherwise can't steal focus on Windows).
+_PS_DIALOG_PREFIX = (
+    "Add-Type -AssemblyName System.Windows.Forms\n"
+    "Add-Type -TypeDefinition 'using System;using System.Runtime.InteropServices;"
+    "public class Fg{[DllImport(\"user32.dll\")]public static extern bool SetForegroundWindow(IntPtr h);}'\n"
+    "$tp = New-Object System.Windows.Forms.Form\n"
+    "$tp.TopMost = $true\n"
+    "$tp.ShowInTaskbar = $false\n"
+    "$tp.Width = 1\n"
+    "$tp.Height = 1\n"
+    "$tp.StartPosition = 'CenterScreen'\n"
+    "$tp.Opacity = 0\n"
+    "$tp.Show()\n"
+    "$tp.Activate()\n"
+    "[Fg]::SetForegroundWindow($tp.Handle) | Out-Null\n"
+)
+
+def _run_native_dialog(dialog_lines):
     try:
         import subprocess
-        ps_code = (
-            "[void][System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms'); "
-            "$dialog = New-Object System.Windows.Forms.FolderBrowserDialog; "
-            "$dialog.Description = 'Select Download Folder'; "
-            "$dialog.ShowNewFolderButton = $true; "
-            "if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { "
-            "  $dialog.SelectedPath "
-            "}"
-        )
-        cmd = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", ps_code]
+        ps_code = _PS_DIALOG_PREFIX + dialog_lines + "$tp.Close()\n"
+        cmd = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-STA", "-Command", ps_code]
         output = subprocess.check_output(
-            cmd, 
-            text=True, 
+            cmd,
+            text=True,
             creationflags=0x08000000 if sys.platform == 'win32' else 0
         ).strip()
         return output if output else None
     except Exception as e:
-        print(f"Folder picker error: {e}")
+        print(f"Native dialog error: {e}")
         return None
 
+# Native Windows folder selector using PowerShell Forms (avoids Tkinter extraction errors in PyInstaller)
+def show_native_folder_picker():
+    return _run_native_dialog(
+        "$dialog = New-Object System.Windows.Forms.FolderBrowserDialog\n"
+        "$dialog.Description = 'Select Download Folder'\n"
+        "$dialog.ShowNewFolderButton = $true\n"
+        "$res = $dialog.ShowDialog($tp)\n"
+        "if ($res -eq [System.Windows.Forms.DialogResult]::OK) { $dialog.SelectedPath }\n"
+    )
+
 def show_native_file_picker():
-    try:
-        import subprocess
-        ps_code = (
-            "[void][System.Reflection.Assembly]::LoadWithPartialName('System.Windows.Forms'); "
-            "$dialog = New-Object System.Windows.Forms.OpenFileDialog; "
-            "$dialog.Title = 'Select Video to Import'; "
-            "$dialog.Filter = 'Video Files (*.mp4;*.mkv;*.ts;*.avi;*.mov;*.m4v)|*.mp4;*.mkv;*.ts;*.avi;*.mov;*.m4v|All Files (*.*)|*.*'; "
-            "if ($dialog.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) { "
-            "  $dialog.FileName "
-            "}"
-        )
-        cmd = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", ps_code]
-        output = subprocess.check_output(
-            cmd, 
-            text=True, 
-            creationflags=0x08000000 if sys.platform == 'win32' else 0
-        ).strip()
-        return output if output else None
-    except Exception as e:
-        print(f"File picker error: {e}")
-        return None
+    return _run_native_dialog(
+        "$dialog = New-Object System.Windows.Forms.OpenFileDialog\n"
+        "$dialog.Title = 'Select Video to Import'\n"
+        "$dialog.Filter = 'Video Files (*.mp4;*.mkv;*.ts;*.avi;*.mov;*.m4v)|*.mp4;*.mkv;*.ts;*.avi;*.mov;*.m4v|All Files (*.*)|*.*'\n"
+        "$res = $dialog.ShowDialog($tp)\n"
+        "if ($res -eq [System.Windows.Forms.DialogResult]::OK) { $dialog.FileName }\n"
+    )
 
 # EPG helpers removed
 
@@ -1208,21 +1299,98 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
             result = os.path.join(result, word)
         return result
 
+    def _client_is_local(self):
+        ip = self.client_address[0] if self.client_address else ""
+        return ip in ("127.0.0.1", "::1", "localhost") or ip.startswith("127.")
+
+    def _get_cookie(self, name):
+        raw = self.headers.get("Cookie", "") or ""
+        for part in raw.split(";"):
+            if "=" in part:
+                k, v = part.strip().split("=", 1)
+                if k == name:
+                    return v
+        return None
+
+    def _is_authorized(self):
+        # The local machine always has access; the lock only guards network devices.
+        if self._client_is_local():
+            return True
+        if not app_lock_enabled():
+            return True
+        tok = self._get_cookie("auth_token")
+        return bool(tok and verify_auth_token(tok))
+
+    def _auth_gate(self, path):
+        """Return True if the request may proceed. Blocks protected /api routes for
+        unauthorized network devices."""
+        if not path.startswith("/api/"):
+            return True
+        if path in ("/api/login", "/api/auth-status"):
+            return True
+        if self._is_authorized():
+            return True
+        self.send_error(401, "Unauthorized")
+        return False
+
     def do_GET(self):
         parsed_path = urllib.parse.urlparse(self.path)
         path = parsed_path.path
         query = urllib.parse.parse_qs(parsed_path.query)
-        
+
         # Serve static files from assets directory
         root_dir = get_assets_dir()
-        
+
+        if not self._auth_gate(path):
+            return
+
         # API endpoints
-        if path == "/api/creds":
+        if path == "/api/auth-status":
+            self.send_json({
+                "locked": app_lock_enabled(),
+                "authorized": self._is_authorized(),
+                "local": self._client_is_local()
+            })
+
+        elif path == "/api/creds":
+            # Never expose passwords to the browser; the backend builds stream URLs.
             res_data = config.copy()
+            res_data.pop("password", None)
+            res_data["profiles"] = [
+                {k: v for k, v in p.items() if k != "password"}
+                for p in config.get("profiles", [])
+            ]
             res_data["version"] = VERSION
             res_data["exp_date"] = get_iptv_expiry_date()
             self.send_json(res_data)
-            
+
+        elif path == "/api/live-bynum":
+            # Resolve a live channel by its displayed sequential number (gnum = the
+            # 1-based position in the full live list, which is what the card shows).
+            chans = CACHED_LIVE
+            if not chans:
+                data, _ = load_cache_stale_check("live")
+                chans = data or []
+            try:
+                n = int(query.get("num", [""])[0])
+            except (ValueError, TypeError):
+                n = 0
+            ch = None
+            if chans and 1 <= n <= len(chans):
+                ch = dict(chans[n - 1])
+                ch["gnum"] = n
+            self.send_json({"channel": ch})
+
+        elif path == "/api/direct-url":
+            # Returns the authenticated provider URL for a stream. Used only when
+            # the client genuinely needs the raw URL (e.g. casting to a device that
+            # cannot reach the local proxy).
+            media_type = query.get("type", [None])[0]
+            stream_id = query.get("id", [None])[0]
+            direct = build_stream_url(media_type, stream_id) if (media_type and stream_id) else ""
+            self.send_json({"url": direct})
+
+
         elif path == "/api/movies":
             self.handle_get_movies(query)
             
@@ -1355,14 +1523,54 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
         
         content_length = int(self.headers.get('Content-Length', 0))
         body = self.rfile.read(content_length).decode('utf-8')
-        
-        if path == "/api/creds":
+
+        if not self._auth_gate(path):
+            return
+
+        if path == "/api/login":
+            try:
+                data = json.loads(body)
+                pw = data.get("password", "")
+                if app_lock_enabled() and hash_password(pw) == config.get("app_password"):
+                    token = make_auth_token()
+                    content = json.dumps({"status": "success"}).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.send_header("Content-Length", len(content))
+                    self.send_header("Set-Cookie", f"auth_token={token}; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax")
+                    self.end_headers()
+                    self.wfile.write(content)
+                else:
+                    self.send_error(401, "Invalid password")
+            except Exception as e:
+                self.send_error(400, f"Login error: {e}")
+
+        elif path == "/api/app-password":
+            # Reachable only by the local machine or an already-authorized device
+            # (enforced by the auth gate above).
+            try:
+                data = json.loads(body)
+                new_pw = data.get("password", "")
+                if new_pw:
+                    config["app_password"] = hash_password(new_pw)
+                    config["app_secret"] = secrets.token_hex(32)  # invalidate existing sessions
+                else:
+                    config.pop("app_password", None)
+                save_config()
+                self.send_json({"status": "success", "locked": app_lock_enabled()})
+            except Exception as e:
+                self.send_error(400, f"Error: {e}")
+
+        elif path == "/api/creds":
             try:
                 new_creds = json.loads(body)
+                # Blank password means "keep the existing one" (the UI no longer
+                # receives the password, so it can't echo it back).
+                incoming_pw = new_creds.get("password", "")
                 config.update({
                     "domain": new_creds.get("domain", config["domain"]),
                     "username": new_creds.get("username", config["username"]),
-                    "password": new_creds.get("password", config["password"]),
+                    "password": incoming_pw if incoming_pw else config["password"],
                 })
                 save_config()
                 # Invalidate cache on disk and memory
@@ -1425,7 +1633,7 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
                 data       = json.loads(body)
                 stream_id  = data.get("id")
                 filename   = data.get("filename", f"recording_{stream_id}")
-                clean_name = filename.replace(':', '-').strip()
+                clean_name = sanitize_filename(filename, f"recording_{stream_id}")
                 dl_id      = f"rec_{int(time.time() * 1000)}"
                 
                 domain    = config["domain"]
@@ -1553,11 +1761,24 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
                             print(f"Error adding completed recording to library: {le}")
                     except Exception as err:
                         print(f"Record exception: {err}")
+                        was_stopped = "Cancelled" in str(err)
+                        # Stopping a live recording is the normal way to finish it,
+                        # so the partial file is a valid recording the user wants kept.
+                        has_data = False
+                        try:
+                            has_data = os.path.exists(filepath) and os.path.getsize(filepath) > 0
+                        except Exception:
+                            pass
                         with downloads_lock:
                             downloads_db[t.dl_id].update({
-                                "status": "cancelled" if "Cancelled" in str(err) else "failed",
+                                "status": "completed" if (was_stopped and has_data) else "cancelled" if was_stopped else "failed",
                                 "speed_mb_s": 0
                             })
+                        if was_stopped and has_data:
+                            try:
+                                add_to_library_config(os.path.basename(filepath), os.path.getsize(filepath))
+                            except Exception as le:
+                                print(f"Error adding stopped recording to library: {le}")
                 
                 t.run = record_run
                 t.start()
@@ -1684,14 +1905,14 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
                     return
                 
                 save_dir = config.get("save_dir", DEFAULT_SAVE_DIR)
-                file_path = os.path.join(save_dir, file_name)
-                
+                file_path = os.path.join(save_dir, os.path.basename(file_name))
+
                 abs_save_dir = os.path.abspath(save_dir)
                 abs_file_path = os.path.abspath(file_path)
-                if not abs_file_path.startswith(abs_save_dir):
+                if os.path.commonpath([abs_save_dir, abs_file_path]) != abs_save_dir:
                     self.send_error(403, "Access denied")
                     return
-                
+
                 # Always remove from config library_items to keep config/UI in sync
                 load_config()
                 config["library_items"] = [item for item in config.get("library_items", []) if item.get("name") != file_name]
@@ -2255,11 +2476,16 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
                 if CACHED_LIVE:
                     save_to_persistent_cache("live", CACHED_LIVE)
         
+        # Assign a stable, unique sequential number (the provider's "num" repeats
+        # across categories, so it can't be used for channel-number entry).
+        for i, c in enumerate(CACHED_LIVE):
+            c["gnum"] = i + 1
+
         search = query.get("query", [""])[0].strip().lower()
         page = int(query.get("page", [1])[0])
         limit = int(query.get("limit", [24])[0])
         cat_id = query.get("category_id", [""])[0].strip()
-        
+
         filtered = CACHED_LIVE
         if search:
             filtered = [c for c in filtered if search in c.get('name', '').lower()]
@@ -2324,14 +2550,31 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
 
     # ── Streaming Proxy (resolves CORS by piping IPTV streams through localhost) ──
     def handle_stream_proxy(self, query):
-        """Fetch M3U8 manifest and rewrite segment/key URLs through our local proxy."""
+        """Fetch M3U8 manifest and rewrite segment/key URLs through our local proxy.
+
+        Preferred form: /api/stream?type=<live|movie|series>&id=<stream_id> — the
+        provider URL (with credentials) is built server-side so it never reaches
+        the browser. Legacy ?url= is still accepted but restricted to safe hosts."""
         import re
+        media_type = query.get("type", [None])[0]
+        stream_id = query.get("id", [None])[0]
         raw_url = query.get("url", [None])[0]
-        if not raw_url:
-            self.send_error(400, "Missing url parameter")
+
+        if media_type and stream_id:
+            stream_url = build_stream_url(media_type, stream_id)
+            if not stream_url:
+                self.send_error(404, "Stream not found")
+                return
+        elif raw_url:
+            stream_url = resolve_m3u_url(urllib.parse.unquote(raw_url))
+        else:
+            self.send_error(400, "Missing type/id (or url) parameter")
             return
+
         try:
-            stream_url = urllib.parse.unquote(raw_url)
+            if not is_safe_remote_url(stream_url):
+                self.send_error(403, "Blocked: target host is not allowed")
+                return
             req = urllib.request.Request(stream_url, headers={"User-Agent": "Mozilla/5.0"})
             with urllib.request.urlopen(req, timeout=15) as resp:
                 final_url = resp.geturl()
@@ -2377,6 +2620,9 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
             return
         try:
             url = urllib.parse.unquote(raw_url)
+            if not is_safe_remote_url(url):
+                self.send_error(403, "Blocked: target host is not allowed")
+                return
             req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
             with urllib.request.urlopen(req, timeout=20) as resp:
                 ctype   = resp.headers.get("Content-Type", "video/MP2T")
@@ -2463,14 +2709,14 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
             return
             
         save_dir = config.get("save_dir", DEFAULT_SAVE_DIR)
-        file_path = os.path.join(save_dir, file_name)
-        
+        file_path = os.path.join(save_dir, os.path.basename(file_name))
+
         abs_save_dir = os.path.abspath(save_dir)
         abs_file_path = os.path.abspath(file_path)
-        if not abs_file_path.startswith(abs_save_dir):
+        if os.path.commonpath([abs_save_dir, abs_file_path]) != abs_save_dir:
             self.send_error(403, "Access denied")
             return
-            
+
         if not os.path.exists(file_path) or not os.path.isfile(file_path):
             self.send_error(404, "File not found")
             return
