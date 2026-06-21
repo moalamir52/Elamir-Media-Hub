@@ -175,6 +175,15 @@
       border: 1px solid var(--border);
     }
     .btn-ghost:hover { background: hsl(220, 20%, 89%); border-color: var(--border-strong); }
+    .btn-red {
+      background: hsla(4, 82%, 52%, 0.1);
+      color: var(--red);
+      border: 1px solid hsla(4, 82%, 52%, 0.25);
+    }
+    .btn-red:hover {
+      background: hsla(4, 82%, 52%, 0.18);
+      border-color: hsla(4, 82%, 52%, 0.45);
+    }
     .btn-sm { padding: 0.3rem 0.7rem; font-size: 0.78rem; }
     .btn:active { transform: translateY(0) scale(0.97); }
     .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; }
@@ -675,21 +684,9 @@
 
     /* EPG UI Styles removed */
 
-    /* ── Continue Watching Row ── */
-    .continue-watching-section { margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem; box-shadow: var(--shadow-sm); }
-    .continue-watching-grid { display: flex; gap: 1rem; overflow-x: auto; padding-bottom: 0.5rem; }
-    .continue-card { position: relative; width: 220px; flex-shrink: 0; background: var(--bg-card2); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.5rem; cursor: pointer; transition: all 0.2s var(--ease); display: flex; flex-direction: column; gap: 0.4rem; }
-    .continue-card:hover { transform: translateY(-2px); border-color: var(--border-indigo); box-shadow: var(--shadow-md); }
-    .continue-poster { position: relative; width: 100%; height: 100px; border-radius: var(--radius-sm); overflow: hidden; background: #000; display: flex; align-items: center; justify-content: center; }
-    .continue-poster img { width: 100%; height: 100%; object-fit: cover; }
-    .continue-poster .fallback-icon { font-size: 2.2rem; }
+    /* ── Continue Watching Progress ── */
     .continue-progress-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 5px; background: rgba(255,255,255,0.24); }
     .continue-progress-fill { height: 100%; background: var(--indigo); transition: width 0.3s; }
-    .continue-info { display: flex; flex-direction: column; gap: 0.15rem; }
-    .continue-title { font-size: 0.8rem; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .continue-time { font-size: 0.7rem; color: var(--text-sub); font-weight: 600; }
-    .continue-delete-btn { position: absolute; top: -5px; right: -5px; background: var(--red); border: none; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.65rem; cursor: pointer; box-shadow: var(--shadow-sm); font-weight: bold; z-index: 15; }
-    .continue-delete-btn:hover { background: #ff4d4d; }
 
     /* ── Resume Playback Prompt ── */
     .resume-prompt-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 360; padding: 1.5rem; text-align: center; }
@@ -698,13 +695,11 @@
     .resume-buttons { display: flex; gap: 0.75rem; justify-content: center; }
 
     /* ── Stream Status Dot ── */
-    .status-dot-container { position: absolute; top: 2.2rem; left: 0.5rem; display: flex; align-items: center; gap: 0.3rem; z-index: 10; background: rgba(0,0,0,0.6); padding: 0.15rem 0.45rem; border-radius: 999px; }
     .status-dot { width: 8px; height: 8px; border-radius: 50%; }
     .status-dot.online { background: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
     .status-dot.offline { background: #e74c3c; box-shadow: 0 0 8px #e74c3c; }
     .status-dot.checking { background: #f1c40f; box-shadow: 0 0 8px #f1c40f; }
     .status-dot.unknown { background: #95a5a6; }
-    .status-dot-text { font-size: 0.65rem; color: #fff; font-weight: bold; }
 
     /* ── Multi-View ── */
     .multiview-container { display: flex; flex-direction: column; gap: 1rem; width: 100%; height: 100%; min-height: 500px; }
@@ -725,6 +720,7 @@
     /* ── Global Search view ── */
     .search-section { margin-bottom: 2rem; }
     .search-section-title { font-family: var(--font-title); font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.35rem; display: flex; align-items: center; gap: 0.4rem; }
+    .searchable-select-opt:hover { background: hsl(220, 20%, 93%) !important; }
   </style>
 </head>
 
@@ -775,6 +771,46 @@
       const [errMsg, setErrMsg]  = useState('');
       const [showArrows, setShowArrows] = useState(false);
       const mouseTimerRef = useRef(null);
+
+      // Chromecast/AirPlay states & functions
+      const [castState, setCastState] = useState('disconnected'); // 'disconnected', 'connecting', 'connected'
+
+      const handleCast = () => {
+        const video = videoRef.current;
+        if (!video) return;
+        if (video.remote && typeof video.remote.prompt === 'function') {
+          video.remote.prompt().catch(()=>{});
+        } else if (video.webkitShowPlaybackTargetPicker) {
+          video.webkitShowPlaybackTargetPicker();
+        } else {
+          toast('Casting is not supported on this browser', 'info');
+        }
+      };
+
+      useEffect(() => {
+        const video = videoRef.current;
+        if (!video) return;
+        const handleStateChange = () => {
+          if (video.remote && video.remote.state) {
+            setCastState(video.remote.state);
+          }
+        };
+        if (video.remote) {
+          video.remote.addEventListener('connect', handleStateChange);
+          video.remote.addEventListener('disconnect', handleStateChange);
+          video.remote.addEventListener('connecting', handleStateChange);
+          if (video.remote.state) {
+            setCastState(video.remote.state);
+          }
+        }
+        return () => {
+          if (video.remote) {
+            video.remote.removeEventListener('connect', handleStateChange);
+            video.remote.removeEventListener('disconnect', handleStateChange);
+            video.remote.removeEventListener('connecting', handleStateChange);
+          }
+        };
+      }, [status]);
 
       // Playback resume states
       const [resumePos, setResumePos] = useState(0);
@@ -918,7 +954,31 @@
       return h('div', { className: 'player-backdrop', onMouseMove: handleMouseMove, onMouseLeave: handleMouseLeave },
         h('div', { className: 'player-header' },
           h('div', { className: 'player-title' }, '▶ ' + title),
-          h('button', { className: 'btn btn-ghost btn-sm', style:{color:'#fff',background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.2)'}, onClick: onClose }, '✕ Close')
+          h('div', { style: { display: 'flex', gap: '0.5rem', alignItems: 'center' } },
+            h('button', {
+              className: 'btn btn-ghost btn-sm',
+              style: {
+                color: '#fff',
+                background: castState === 'connected' 
+                  ? 'linear-gradient(135deg, var(--indigo), var(--purple))' 
+                  : castState === 'connecting'
+                    ? 'rgba(241, 196, 15, 0.35)'
+                    : 'rgba(255,255,255,0.12)',
+                border: castState === 'connected'
+                  ? 'none'
+                  : '1px solid rgba(255,255,255,0.2)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                boxShadow: castState === 'connected' ? '0 2px 10px var(--indigo-glow)' : 'none'
+              },
+              onClick: handleCast,
+              title: 'Cast to Chromecast or AirPlay device'
+            }, 
+              castState === 'connected' ? '🟢 Casting' : castState === 'connecting' ? '⏳ Connecting...' : '📺 Cast / AirPlay'
+            ),
+            h('button', { className: 'btn btn-ghost btn-sm', style:{color:'#fff',background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.2)'}, onClick: onClose }, '✕ Close')
+          )
         ),
         h('div', { className: 'player-video-wrap', style: { position: 'relative', width: '100%', height: '100%' } },
           status === 'loading' && h('div', { className: 'player-loading' },
@@ -934,7 +994,9 @@
           h('video', {
             ref: videoRef, className: 'player-video', controls: true,
             style: { display: status === 'error' ? 'none' : 'block' },
-            onTimeUpdate: handleTimeUpdate
+            onTimeUpdate: handleTimeUpdate,
+            'x-webkit-airplay': 'allow',
+            'airplay': 'allow'
           }),
           showArrows && hasPrev && onPrev && h('button', {
             className: 'player-nav-arrow player-nav-prev',
@@ -1124,14 +1186,16 @@
 
       const toProxy = (u) => getApiUrl(`/api/stream?url=${encodeURIComponent(u)}`);
       const streamUrl = (epId) => toProxy(`${creds.domain}/series/${creds.username}/${creds.password}/${epId}.m3u8`);
+      
+      const seriesCover = item.stream_icon || item.cover;
 
       return h('div', { className: 'modal-backdrop', onClick: onClose },
         h('div', { className: 'modal-box', onClick: e => e.stopPropagation(), style:{maxWidth:'820px'} },
           h('div', { className: 'modal-hero' },
-            item.stream_icon && h('img', {src:item.stream_icon, className:'modal-hero-bg-img', onError:e=>e.target.style.display='none'}),
+            seriesCover && h('img', {src:seriesCover, className:'modal-hero-bg-img', onError:e=>e.target.style.display='none'}),
             h('div', {className:'modal-hero-gradient'}),
             h('div', {className:'modal-hero-info'},
-              item.stream_icon && h('img', {src:item.stream_icon, className:'modal-hero-poster', onError:e=>e.target.style.display='none'}),
+              seriesCover && h('img', {src:seriesCover, className:'modal-hero-poster', onError:e=>e.target.style.display='none'}),
               h('div', {className:'modal-hero-details'},
                 h('div', {style:{display:'flex',alignItems:'center',gap:'0.5rem'}},
                   h('div', {className:'modal-type-badge'}, '📺 TV Series'),
@@ -1198,13 +1262,15 @@
         return () => document.removeEventListener('keydown', fn);
       }, []);
 
+      const detailCover = item.stream_icon || item.cover;
+
       return h('div', {className:'modal-backdrop', onClick:onClose},
         h('div', {className:'modal-box', onClick:e=>e.stopPropagation()},
           h('div', {className:'modal-hero'},
-            item.stream_icon && h('img', {src:item.stream_icon, className:'modal-hero-bg-img', onError:e=>e.target.style.display='none'}),
+            detailCover && h('img', {src:detailCover, className:'modal-hero-bg-img', onError:e=>e.target.style.display='none'}),
             h('div', {className:'modal-hero-gradient'}),
             h('div', {className:'modal-hero-info'},
-              item.stream_icon && h('img', {src:item.stream_icon, className:'modal-hero-poster', onError:e=>e.target.style.display='none'}),
+              detailCover && h('img', {src:detailCover, className:'modal-hero-poster', onError:e=>e.target.style.display='none'}),
               h('div', {className:'modal-hero-details'},
                 h('div', {className:'modal-type-badge'}, type==='movie' ? '🎬 Movie' : '📡 Live Channel'),
                 h('h2', {className:'modal-title'}, item.name),
@@ -1243,7 +1309,7 @@
     }
 
     // ── Media Card ──
-    function MediaCard({ item, type, catName, isFav, onRemove, onClick, onToggleFav, autoCheck, checkTriggerToken }) {
+    function MediaCard({ item, type, catName, isFav, onRemove, onClick, onToggleFav, autoCheck, checkTriggerToken, progress }) {
       const [imgErr, setImgErr] = useState(false);
       const icon = type==='movie' ? '🎬' : type==='series' ? '📺' : '📡';
       const badgeCls = type==='movie' ? 'cat-badge movie' : type==='series' ? 'cat-badge series' : 'cat-badge live';
@@ -1255,8 +1321,9 @@
       const handleCheckHealth = async (e) => {
         if (e) e.stopPropagation();
         setCheckingHealth(true);
+        const streamId = item.stream_id || item.id;
         try {
-          const r = await apiFetch(`/api/check-stream?id=${item.stream_id}`);
+          const r = await apiFetch(`/api/check-stream?id=${streamId}`);
           if (r.ok) {
             const d = await r.json();
             setStreamHealth(d.online ? 'online' : 'offline');
@@ -1274,40 +1341,50 @@
         if (type === 'live' && autoCheck) {
           handleCheckHealth();
         }
-      }, [item.stream_id, autoCheck, checkTriggerToken]);
+      }, [item.stream_id, item.id, autoCheck, checkTriggerToken]);
+
+      const cardCover = item.stream_icon || item.cover;
 
       return h('div', {className:'media-card', onClick:()=>onClick(item)},
         h('div', {className:'card-poster'},
-          !imgErr && item.stream_icon
-            ? h('img', {src:item.stream_icon, alt:item.name, loading:'lazy', onError:()=>setImgErr(true)})
+          !imgErr && cardCover
+            ? h('img', {src:cardCover, alt:item.name, loading:'lazy', onError:()=>setImgErr(true)})
             : null,
-          (imgErr || !item.stream_icon) && h('div', {className:'card-poster-fallback'},
+          (imgErr || !cardCover) && h('div', {className:'card-poster-fallback'},
             h('span', null, icon),
             h('small', {style:{fontSize:'0.7rem',textAlign:'center',padding:'0 0.5rem',color:'var(--text-dim)'}}, item.name)
           ),
-          type === 'live' && h('div', {className:'live-badge'}, h('div',{className:'live-dot'}), 'LIVE'),
-          type === 'live' && item.num && h('div', {className:'ch-num'}, `#${item.num}`),
-          
-          // Stream Checker UI on Live cards
           type === 'live' && h('div', {
-            className: 'status-dot-container',
-            onClick: handleCheckHealth,
-            title: 'Click to check channel status'
+            style: {
+              position: 'absolute', top: '0.5rem', left: '0.5rem',
+              display: 'flex', alignItems: 'center', gap: '0.35rem', zIndex: 10
+            }
           },
-            checkingHealth 
-              ? h('div', { className: 'status-dot checking' }) 
-              : h('div', { className: `status-dot ${streamHealth || 'unknown'}` }),
-            h('span', { className: 'status-dot-text' }, 
-              checkingHealth ? 'Checking...' : streamHealth === 'online' ? 'Online' : streamHealth === 'offline' ? 'Offline' : 'Check'
-            )
+            item.num && h('div', {
+              style: {
+                background: 'rgba(255,255,255,0.9)', color: 'var(--text-sub)',
+                fontSize: '0.68rem', fontFamily: 'var(--font)', fontWeight: 700,
+                padding: '0.15rem 0.4rem', borderRadius: 'var(--radius-sm)',
+                boxShadow: 'var(--shadow-sm)'
+              }
+            }, `#${item.num}`),
+            h('div', {
+              style: {
+                display: 'flex', alignItems: 'center', gap: '0.3rem',
+                background: 'rgba(255,255,255,0.92)', border: '1px solid hsla(4,82%,52%,0.4)',
+                padding: '0.15rem 0.45rem', borderRadius: '999px',
+                fontSize: '0.7rem', fontWeight: 700, color: 'var(--red)',
+                boxShadow: 'var(--shadow-sm)'
+              }
+            }, h('div',{className:'live-dot'}), 'LIVE')
           ),
 
           onRemove && h('button', {
             className: 'remove-recent-btn',
             onClick: (e) => { e.stopPropagation(); onRemove(); },
             style: {
-              position: 'absolute', top: '0.5rem', left: '0.5rem',
-              background: 'rgba(255, 71, 87, 0.85)', border: 'none',
+              position: 'absolute', top: '0.5rem', right: '2.8rem',
+              background: 'rgba(255, 71, 87, 0.95)', border: 'none',
               borderRadius: '50%', width: '32px', height: '32px',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer', zIndex: 10, color: '#ffffff',
@@ -1325,8 +1402,9 @@
               borderRadius: '50%', width: '32px', height: '32px',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               cursor: 'pointer', zIndex: 10, color: isFav ? '#ff4757' : '#ffffff',
-              transition: 'all 0.2s', fontSize: '0.85rem',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+              transition: 'all 0.2s', fontSize: '1rem',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+              lineHeight: '1'
             }
           }, isFav ? '❤️' : '🤍'),
           h('div', {className:'card-overlay'},
@@ -1334,14 +1412,41 @@
               h('span', {className:'btn btn-cyan btn-sm', style:{pointerEvents:'none'}}, '▶ Watch'),
               type !== 'series' && h('span', {className:'btn btn-gold btn-sm', style:{pointerEvents:'none'}}, '⬇')
             )
+          ),
+          progress > 0 && h('div', { className: 'continue-progress-bar' },
+            h('div', { className: 'continue-progress-fill', style: { width: `${progress}%` } })
           )
         ),
         h('div', {className:'card-body'},
           h('div', {className:'card-title', title:item.name}, item.name),
-          h('div', {className:'card-meta'},
+          h('div', {className:'card-meta', style:{display:'flex', justifyContent:'space-between', alignItems:'center', width:'100%', minHeight:'24px'}},
             catName
-              ? h('span', {className:'cat-badge cat-name', style:{maxWidth:'100%'}}, catName)
-              : h('span', {className:badgeCls}, type==='movie'?'Movie':type==='series'?'Series':'Live')
+              ? h('span', {className:'cat-badge cat-name', style:{maxWidth: type === 'live' ? '65%' : '100%'}}, catName)
+              : h('span', {className:badgeCls}, type==='movie'?'Movie':type==='series'?'Series':'Live'),
+            
+            type === 'live' && h('div', {
+              onClick: handleCheckHealth,
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.3rem',
+                cursor: 'pointer',
+                background: 'var(--bg-card2)',
+                border: '1px solid var(--border)',
+                padding: '0.15rem 0.45rem',
+                borderRadius: '999px',
+                fontSize: '0.68rem',
+                fontWeight: '600'
+              },
+              title: 'Click to check channel status'
+            },
+              checkingHealth 
+                ? h('div', { className: 'status-dot checking' }) 
+                : h('div', { className: `status-dot ${streamHealth || 'unknown'}` }),
+              h('span', { style: { color: 'var(--text-sub)', fontSize: '0.65rem', fontWeight: 'bold' } }, 
+                checkingHealth ? 'Checking...' : streamHealth === 'online' ? 'Online' : streamHealth === 'offline' ? 'Offline' : 'Check'
+              )
+            )
           )
         )
       );
@@ -1490,6 +1595,129 @@
       );
     }
 
+    // ── Custom Searchable Select Dropdown ──
+    function SearchableSelect({ value, options, placeholder, onChange }) {
+      const [isOpen, setIsOpen] = useState(false);
+      const [search, setSearch] = useState('');
+      const containerRef = useRef(null);
+
+      useEffect(() => {
+        const clickOutside = (e) => {
+          if (containerRef.current && !containerRef.current.contains(e.target)) {
+            setIsOpen(false);
+          }
+        };
+        document.addEventListener('mousedown', clickOutside);
+        return () => document.removeEventListener('mousedown', clickOutside);
+      }, []);
+
+      const filtered = options.filter(opt => 
+        opt.category_name && opt.category_name.toLowerCase().includes(search.toLowerCase())
+      );
+
+      const selectedOpt = options.find(opt => String(opt.category_id) === String(value));
+      const displayText = selectedOpt ? selectedOpt.category_name : placeholder;
+
+      return h('div', { 
+        ref: containerRef, 
+        style: { position: 'relative', minWidth: '180px', fontFamily: 'var(--font)' } 
+      },
+        h('div', {
+          className: 'cat-select',
+          style: { 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between', 
+            height: '38px', 
+            padding: '0 0.75rem', 
+            background: 'var(--bg-input)', 
+            border: '1px solid var(--border)', 
+            borderRadius: 'var(--radius-md)', 
+            cursor: 'pointer',
+            fontSize: '0.875rem',
+            userSelect: 'none'
+          },
+          onClick: () => { setIsOpen(!isOpen); setSearch(''); }
+        },
+          h('span', { style: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginRight: '0.5rem' } }, displayText),
+          h('span', { style: { fontSize: '0.75rem', color: 'var(--text-dim)' } }, isOpen ? '⏶' : '⏷')
+        ),
+
+        isOpen && h('div', {
+          style: {
+            position: 'absolute',
+            top: 'calc(100% + 4px)',
+            left: 0,
+            right: 0,
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-strong)',
+            borderRadius: 'var(--radius-md)',
+            boxShadow: 'var(--shadow-lg)',
+            zIndex: 1000,
+            overflow: 'hidden',
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: '300px'
+          }
+        },
+          h('div', { style: { padding: '0.5rem', borderBottom: '1px solid var(--border)', background: 'var(--bg-card2)' } },
+            h('input', {
+              type: 'text',
+              placeholder: 'Search category...',
+              value: search,
+              onChange: e => setSearch(e.target.value),
+              style: {
+                width: '100%',
+                padding: '0.35rem 0.55rem',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--border)',
+                background: 'var(--bg-input)',
+                color: 'var(--text-main)',
+                fontSize: '0.82rem',
+                outline: 'none',
+                fontFamily: 'var(--font)'
+              }
+            })
+          ),
+
+          h('div', { style: { overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column' } },
+            h('div', {
+              style: {
+                padding: '0.5rem 0.75rem',
+                fontSize: '0.82rem',
+                cursor: 'pointer',
+                background: value === '' ? 'hsla(242, 80%, 58%, 0.08)' : 'transparent',
+                color: value === '' ? 'var(--indigo)' : 'var(--text-main)',
+                fontWeight: value === '' ? '700' : 'normal',
+                transition: 'background 0.15s'
+              },
+              onClick: () => { onChange(''); setIsOpen(false); },
+              className: 'searchable-select-opt'
+            }, placeholder),
+
+            filtered.map(opt => {
+              const optId = String(opt.category_id);
+              const isSelected = String(value) === optId;
+              return h('div', {
+                key: optId,
+                style: {
+                  padding: '0.5rem 0.75rem',
+                  fontSize: '0.82rem',
+                  cursor: 'pointer',
+                  background: isSelected ? 'hsla(242, 80%, 58%, 0.08)' : 'transparent',
+                  color: isSelected ? 'var(--indigo)' : 'var(--text-main)',
+                  fontWeight: isSelected ? '700' : 'normal',
+                  transition: 'background 0.15s'
+                },
+                onClick: () => { onChange(optId); setIsOpen(false); },
+                className: 'searchable-select-opt'
+              }, opt.category_name);
+            })
+          )
+        )
+      );
+    }
+
     // ────────────────────────────────────────────────────────────────
     // Main App
     // ────────────────────────────────────────────────────────────────
@@ -1499,6 +1727,17 @@
       const [showSettings, setShowSettings] = useState(false);
       const [editCreds, setEditCreds] = useState({domain:'',username:'',password:''});
       const settingsRef = useRef(null);
+
+      // Profiles state variables
+      const [profiles, setProfiles] = useState([]);
+      const [activeProfileId, setActiveProfileId] = useState(null);
+      const [addProfileType, setAddProfileType] = useState('xtream');
+      const [newProfileName, setNewProfileName] = useState('');
+      const [newXtreamDomain, setNewXtreamDomain] = useState('');
+      const [newXtreamUser, setNewXtreamUser] = useState('');
+      const [newXtreamPass, setNewXtreamPass] = useState('');
+      const [newM3uUrl, setNewM3uUrl] = useState('');
+      const [newM3uFile, setNewM3uFile] = useState(null);
 
       const [activeTab, setActiveTab] = useState('movies');
       const [search, setSearch]       = useState('');
@@ -1637,7 +1876,7 @@
         return () => clearTimeout(t);
       }, [search]);
 
-      useEffect(() => { fetchCreds(); fetchFavorites(); const iv = setInterval(fetchDownloads, 1500); return () => clearInterval(iv); }, []);
+      useEffect(() => { fetchProfiles(); fetchCreds(); fetchFavorites(); const iv = setInterval(fetchDownloads, 1500); return () => clearInterval(iv); }, []);
 
 
 
@@ -1710,6 +1949,126 @@
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
       }, [showSettings, editCreds, creds]);
+
+      const fetchProfiles = async () => {
+        try {
+          const r = await apiFetch('/api/profiles');
+          if (r.ok) {
+            const d = await r.json();
+            setProfiles(d.profiles || []);
+            setActiveProfileId(d.active_profile_id || null);
+          }
+        } catch (e) {
+          toast('Error loading profiles', 'error');
+        }
+      };
+
+      const handleSelectProfile = async (id) => {
+        try {
+          const r = await apiFetch('/api/profiles/select', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+          });
+          if (r.ok) {
+            toast('Profile switched successfully! ✓', 'success');
+            await fetchProfiles();
+            await fetchCreds();
+            setItems([]);
+            setPage(1);
+            loadCats();
+            fetchMedia();
+          } else {
+            toast('Failed to select profile', 'error');
+          }
+        } catch (e) {
+          toast('Error switching profile', 'error');
+        }
+      };
+
+      const handleDeleteProfile = async (id) => {
+        if (!confirm('Are you sure you want to delete this profile?')) return;
+        try {
+          const r = await apiFetch('/api/profiles/delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id })
+          });
+          if (r.ok) {
+            toast('Profile deleted successfully! ✓', 'success');
+            await fetchProfiles();
+            await fetchCreds();
+            setPage(1);
+            loadCats();
+            fetchMedia();
+          } else {
+            toast('Failed to delete profile', 'error');
+          }
+        } catch (e) {
+          toast('Error deleting profile', 'error');
+        }
+      };
+
+      const handleAddProfile = async (e) => {
+        e.preventDefault();
+        try {
+          if (addProfileType === 'm3u_file') {
+            if (!newM3uFile) {
+              toast('Please select an M3U file to upload', 'error');
+              return;
+            }
+            const formData = new FormData();
+            formData.append('name', newProfileName);
+            formData.append('file', newM3uFile);
+            
+            const r = await fetch(getApiUrl('/api/profiles/upload-m3u'), {
+              method: 'POST',
+              body: formData
+            });
+            if (r.ok) {
+              toast('M3U File Profile added successfully! ✓', 'success');
+              setNewProfileName('');
+              setNewM3uFile(null);
+              const fileInput = document.getElementById('m3u-file-input');
+              if (fileInput) fileInput.value = '';
+              await fetchProfiles();
+            } else {
+              toast('Failed to upload M3U file', 'error');
+            }
+          } else {
+            const body = {
+              name: newProfileName,
+              type: addProfileType
+            };
+            if (addProfileType === 'xtream') {
+              body.domain = newXtreamDomain;
+              body.username = newXtreamUser;
+              body.password = newXtreamPass;
+            } else if (addProfileType === 'm3u_url') {
+              body.m3u_url = newM3uUrl;
+            }
+            
+            const r = await apiFetch('/api/profiles/add', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(body)
+            });
+            if (r.ok) {
+              toast('Profile added successfully! ✓', 'success');
+              setNewProfileName('');
+              setNewXtreamDomain('');
+              setNewXtreamUser('');
+              setNewXtreamPass('');
+              setNewM3uUrl('');
+              await fetchProfiles();
+            } else {
+              toast('Failed to add profile', 'error');
+            }
+          }
+        } catch (e) {
+          toast('Error adding profile', 'error');
+        }
+      };
 
       const fetchCreds = async () => {
         try {
@@ -1801,9 +2160,9 @@
         let isLive = type === 'live';
         
         if (type === 'movie') {
-          url = getApiUrl(`/api/stream?url=${encodeURIComponent(`${creds.domain}/movie/${creds.username}/${creds.password}/${item.stream_id}.m3u8`)}`);
+          url = getApiUrl(`/api/stream?url=${encodeURIComponent(`${creds.domain}/movie/${creds.username}/${creds.password}/${streamId}.m3u8`)}`);
         } else if (type === 'live') {
-          url = getApiUrl(`/api/stream?url=${encodeURIComponent(`${creds.domain}/live/${creds.username}/${creds.password}/${item.stream_id}.m3u8`)}`);
+          url = getApiUrl(`/api/stream?url=${encodeURIComponent(`${creds.domain}/live/${creds.username}/${creds.password}/${streamId}.m3u8`)}`);
         } else if (type === 'series' && episodeTitle && episodeUrl) {
           title = episodeTitle;
           url = episodeUrl;
@@ -2203,6 +2562,13 @@
       const isEditAdmin = editCreds.username && editCreds.username.toLowerCase() === 'admin';
       const activeDls = downloads.filter(d => d.status==='downloading');
 
+      const playbackProgressMap = {};
+      continueWatching.forEach(cw => {
+        if (cw.id && cw.duration > 0) {
+          playbackProgressMap[String(cw.id)] = (cw.position / cw.duration) * 100;
+        }
+      });
+
       return h('div', {className:'app-shell'},
 
         // ── Toasts ──
@@ -2290,10 +2656,14 @@
         h('div', {className:`page-content${downloads.length>0?' has-dl-bar':''}`, style:{flex:1}},
 
           // Settings Panel
-          showSettings && h('div', {ref: settingsRef, className:'settings-panel'},
-            h('form', {onSubmit:handleSaveCreds},
-              h('div', {style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'0.75rem'}},
-                h('h3', {style:{fontFamily:'var(--font-title)',fontWeight:700,fontSize:'1.05rem'}}, '⚙️ Settings'),
+          showSettings && (() => {
+            const activeProfile = profiles.find(p => p.id === activeProfileId);
+            const isActiveM3u = activeProfile && activeProfile.type !== 'xtream';
+            
+            return h('div', {ref: settingsRef, className:'settings-panel'},
+              // Header
+              h('div', {style:{display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid var(--border)',paddingBottom:'0.75rem'}},
+                h('h3', {style:{fontFamily:'var(--font-title)',fontWeight:700,fontSize:'1.05rem',margin:0}}, '⚙️ Settings & Profiles'),
                 h('div', {style:{display:'flex',gap:'0.75rem',fontSize:'0.82rem',color:'var(--text-sub)',alignItems:'center'}},
                   isAdmin && h('span', null, `🌐 ${domainShort}`),
                   h('span', null, `👤 ${creds.username||'?'}`),
@@ -2309,41 +2679,305 @@
                   }, `📅 Expiry: ${creds.exp_date}`)
                 )
               ),
-              h('div', {className:'settings-grid'},
-                isEditAdmin && h('div', {className:'form-group'},
-                  h('label', {className:'form-label'}, 'Server Domain'),
-                  h('input', {className:'form-input',type:'text',value:editCreds.domain,onChange:e=>setEditCreds(p=>({...p,domain:e.target.value})),placeholder:'http://server.com',required:true})
+
+              // Profiles Section
+              h('div', {style:{borderBottom:'1px solid var(--border)',paddingBottom:'1.25rem',marginTop:'0.75rem'}},
+                h('h4', {style:{fontFamily:'var(--font-title)',fontWeight:600,fontSize:'0.9rem',marginBottom:'0.5rem',color:'var(--text-main)'}}, '👤 Profiles Manager (إدارة الحسابات)'),
+                
+                // Profiles List
+                h('div', {style:{display:'flex',flexDirection:'column',gap:'0.5rem',marginBottom:'1rem'}},
+                  profiles.length === 0 && h('div', {style:{padding:'0.75rem',background:'var(--bg-base)',borderRadius:'var(--radius-md)',fontSize:'0.82rem',color:'var(--text-sub)',textAlign:'center'}},
+                    'No profiles added yet. Configure default settings below.'
+                  ),
+                  profiles.map(p => {
+                    const isActive = p.id === activeProfileId;
+                    const typeLabel = p.type === 'xtream' ? 'Xtream Codes' : p.type === 'm3u_url' ? 'M3U URL' : 'M3U File';
+                    const typeColor = p.type === 'xtream' ? 'var(--indigo)' : p.type === 'm3u_url' ? 'var(--cyan)' : 'var(--gold)';
+                    
+                    return h('div', {
+                      key: p.id,
+                      style: {
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '0.6rem 0.8rem',
+                        background: isActive ? 'hsla(234, 89%, 74%, 0.08)' : 'var(--bg-base)',
+                        border: isActive ? '1px solid var(--indigo)' : '1px solid var(--border)',
+                        borderRadius: 'var(--radius-md)',
+                        gap: '0.75rem'
+                      }
+                    },
+                      h('div', {style:{display:'flex',flexDirection:'column',gap:'0.2rem',minWidth:0}},
+                        h('div', {style:{display:'flex',alignItems:'center',gap:'0.5rem',flexWrap:'wrap'}},
+                          h('span', {style:{fontWeight:600,fontSize:'0.85rem',color:'var(--text-main)',textOverflow:'ellipsis',overflow:'hidden',whiteSpace:'nowrap'}}, p.name),
+                          h('span', {
+                            style: {
+                              fontSize: '0.65rem',
+                              fontWeight: 'bold',
+                              padding: '0.1rem 0.35rem',
+                              borderRadius: '4px',
+                              background: `linear-gradient(135deg, ${typeColor}1a, ${typeColor}2a)`,
+                              color: typeColor,
+                              border: `1px solid ${typeColor}40`
+                            }
+                          }, typeLabel)
+                        ),
+                        p.type === 'xtream' && h('span', {style:{fontSize:'0.72rem',color:'var(--text-sub)',textOverflow:'ellipsis',overflow:'hidden',whiteSpace:'nowrap'}}, `${p.username}@${p.domain.replace(/^https?:\/\//, '')}`),
+                        p.type === 'm3u_url' && h('span', {style:{fontSize:'0.72rem',color:'var(--text-sub)',textOverflow:'ellipsis',overflow:'hidden',whiteSpace:'nowrap'}}, p.m3u_url)
+                      ),
+                      h('div', {style:{display:'flex',alignItems:'center',gap:'0.4rem',flexShrink:0}},
+                        isActive 
+                          ? h('span', {style:{color:'var(--green)',fontSize:'0.78rem',fontWeight:'bold'}}, '✓ Active')
+                          : h('button', {
+                              type: 'button',
+                              className: 'btn btn-ghost btn-sm',
+                              style: {padding:'0.25rem 0.5rem', fontSize:'0.75rem', color:'var(--text-main)'},
+                              onClick: () => handleSelectProfile(p.id)
+                            }, 'Select'),
+                        h('button', {
+                          type: 'button',
+                          className: 'btn btn-ghost btn-sm',
+                          style: {padding:'0.25rem 0.5rem', fontSize:'0.75rem', color:'#ff4757'},
+                          onClick: () => handleDeleteProfile(p.id)
+                        }, '✕')
+                      )
+                    );
+                  })
                 ),
-                h('div', {className:'form-group'},
-                  h('label', {className:'form-label'}, 'Username'),
-                  h('input', {className:'form-input',type:'text',value:editCreds.username,onChange:e=>setEditCreds(p=>({...p,username:e.target.value})),required:true})
-                ),
-                h('div', {className:'form-group'},
-                  h('label', {className:'form-label'}, 'Password'),
-                  h('input', {className:'form-input',type:'password',value:editCreds.password,onChange:e=>setEditCreds(p=>({...p,password:e.target.value})),required:true})
-                ),
-                h('div', {className:'form-group'},
-                  h('label', {className:'form-label'}, '📁 Download Folder'),
-                  h('div', {className:'save-dir-row'},
-                    h('div', {className:'save-dir-display', title:saveDir}, saveDir||'Default Downloads'),
-                    h('button', {type:'button',className:'btn btn-ghost btn-sm',onClick:handleBrowse}, 'Browse...')
-                  )
-                ),
-                h('div', {className:'form-group'},
-                  h('label', {className:'form-label'}, '🔄 Auto Stream Checker (Live TV)'),
-                  h('select', {
-                    className: 'form-input',
-                    value: autoCheck,
-                    onChange: e => setAutoCheck(e.target.value)
-                  },
-                    h('option', { value: 'disabled' }, 'Disabled (معطل)'),
-                    h('option', { value: '1' }, 'Every 1 Minute (كل دقيقة)'),
-                    h('option', { value: '5' }, 'Every 5 Minutes (كل 5 دقائق)'),
-                    h('option', { value: '10' }, 'Every 10 Minutes (كل 10 دقائق)')
+
+                // Add Profile Form
+                h('div', {style:{background:'var(--bg-base)',padding:'0.85rem',borderRadius:'var(--radius-md)',border:'1px solid var(--border)'}},
+                  h('h5', {style:{fontSize:'0.82rem',fontWeight:700,marginBottom:'0.6rem',color:'var(--text-main)'}}, '➕ Add Subscription Profile'),
+                  h('form', {onSubmit: handleAddProfile, style:{display:'flex',flexDirection:'column',gap:'0.75rem'}},
+                    h('div', {className:'form-group'},
+                      h('label', {className:'form-label'}, 'Profile Name'),
+                      h('input', {
+                        className:'form-input',
+                        type:'text',
+                        value:newProfileName,
+                        onChange:e=>setNewProfileName(e.target.value),
+                        placeholder:'e.g. My Premium IPTV',
+                        required:true
+                      })
+                    ),
+                    
+                    // Profile Type Switcher
+                    h('div', {
+                      style: {
+                        display: 'flex',
+                        background: 'var(--bg-card)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: '0.2rem',
+                        gap: '0.2rem',
+                        border: '1px solid var(--border)'
+                      }
+                    },
+                      [
+                        { id: 'xtream', label: 'Xtream API' },
+                        { id: 'm3u_url', label: 'M3U URL' },
+                        { id: 'm3u_file', label: 'M3U File' }
+                      ].map(tab => {
+                        const isSel = addProfileType === tab.id;
+                        return h('button', {
+                          key: tab.id,
+                          type: 'button',
+                          onClick: () => setAddProfileType(tab.id),
+                          style: {
+                            flex: 1,
+                            background: isSel ? 'var(--bg-base)' : 'transparent',
+                            color: isSel ? 'var(--indigo)' : 'var(--text-sub)',
+                            border: isSel ? '1px solid var(--border)' : 'none',
+                            borderRadius: 'calc(var(--radius-md) - 2px)',
+                            padding: '0.35rem 0.5rem',
+                            fontSize: '0.78rem',
+                            fontWeight: isSel ? 'bold' : 'normal',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }
+                        }, tab.label);
+                      })
+                    ),
+                    
+                    // Conditional Inputs
+                    addProfileType === 'xtream' && h('div', {style:{display:'flex',flexDirection:'column',gap:'0.6rem'}},
+                      h('div', {className:'form-group'},
+                        h('label', {className:'form-label'}, 'Server URL'),
+                        h('input', {
+                          className:'form-input',
+                          type:'text',
+                          value:newXtreamDomain,
+                          onChange:e=>setNewXtreamDomain(e.target.value),
+                          placeholder:'http://domain.com:8080',
+                          required: addProfileType === 'xtream'
+                        })
+                      ),
+                      h('div', {style:{display:'flex',gap:'0.5rem'}},
+                        h('div', {className:'form-group', style:{flex:1}},
+                          h('label', {className:'form-label'}, 'Username'),
+                          h('input', {
+                            className:'form-input',
+                            type:'text',
+                            value:newXtreamUser,
+                            onChange:e=>setNewXtreamUser(e.target.value),
+                            placeholder:'username',
+                            required: addProfileType === 'xtream'
+                          })
+                        ),
+                        h('div', {className:'form-group', style:{flex:1}},
+                          h('label', {className:'form-label'}, 'Password'),
+                          h('input', {
+                            className:'form-input',
+                            type:'password',
+                            value:newXtreamPass,
+                            onChange:e=>setNewXtreamPass(e.target.value),
+                            placeholder:'password',
+                            required: addProfileType === 'xtream'
+                          })
+                        )
+                      )
+                    ),
+                    
+                    addProfileType === 'm3u_url' && h('div', {className:'form-group'},
+                      h('label', {className:'form-label'}, 'M3U Playlist URL'),
+                      h('input', {
+                        className:'form-input',
+                        type:'text',
+                        value:newM3uUrl,
+                        onChange:e=>setNewM3uUrl(e.target.value),
+                        placeholder:'http://domain.com/get.php?auth=...',
+                        required: addProfileType === 'm3u_url'
+                      })
+                    ),
+                    
+                    addProfileType === 'm3u_file' && h('div', {
+                      style: {
+                        background: 'var(--bg-card)',
+                        padding: '0.8rem',
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px dashed var(--border-indigo)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        textAlign: 'center'
+                      },
+                      onClick: () => document.getElementById('m3u-file-input').click()
+                    },
+                      h('input', {
+                        id: 'm3u-file-input',
+                        type: 'file',
+                        accept: '.m3u,.m3u8,.txt',
+                        style: { display: 'none' },
+                        onChange: e => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            setNewM3uFile(file);
+                            if (!newProfileName) setNewProfileName(file.name.replace(/\.[^/.]+$/, ""));
+                          }
+                        }
+                      }),
+                      h('span', {style:{fontSize:'1.5rem',marginBottom:'0.25rem'}}, '📁'),
+                      h('span', {style:{fontSize:'0.75rem',fontWeight:'bold',color:'var(--text-main)'}}, 
+                        newM3uFile ? `Selected: ${newM3uFile.name}` : 'Click to select M3U File'
+                      ),
+                      newM3uFile && h('span', {style:{fontSize:'0.65rem',color:'var(--text-sub)',marginTop:'0.2rem'}}, 
+                        `${(newM3uFile.size / (1024*1024)).toFixed(2)} MB`
+                      )
+                    ),
+                    
+                    h('button', {type:'submit', className:'btn btn-indigo', style:{width:'100%',marginTop:'0.25rem'}}, 'Add Profile')
                   )
                 )
               ),
-              h('div', null, h('button', {type:'submit',className:'btn btn-indigo'}, '💾 Save Settings')),
+
+              // Preferences Section
+              isActiveM3u && h('div', {style:{borderBottom:'1px solid var(--border)',paddingBottom:'1.25rem',marginTop:'1rem'}},
+                h('div', {
+                  style: {
+                    background: 'hsla(45, 100%, 50%, 0.05)',
+                    border: '1px solid var(--border-gold)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '0.8rem 1rem',
+                    marginBottom: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem'
+                  }
+                },
+                  h('span', {style:{fontSize:'1.5rem'}}, '⚡'),
+                  h('div', {style:{display:'flex',flexDirection:'column',gap:'0.2rem'}},
+                    h('h4', {style:{fontSize:'0.82rem',fontWeight:'bold',margin:0,color:'var(--text-main)'}}, `Active M3U Subscription: ${activeProfile.name}`),
+                    h('p', {style:{fontSize:'0.72rem',color:'var(--text-sub)',margin:0}}, 
+                      activeProfile.type === 'm3u_file' ? 'Local M3U Playlist file loaded.' : `M3U URL: ${activeProfile.m3u_url}`
+                    )
+                  )
+                ),
+                h('div', {className:'settings-grid'},
+                  h('div', {className:'form-group'},
+                    h('label', {className:'form-label'}, '📁 Download Folder'),
+                    h('div', {className:'save-dir-row'},
+                      h('div', {className:'save-dir-display', title:saveDir}, saveDir||'Default Downloads'),
+                      h('button', {type:'button',className:'btn btn-ghost btn-sm',onClick:handleBrowse}, 'Browse...')
+                    )
+                  ),
+                  h('div', {className:'form-group'},
+                    h('label', {className:'form-label'}, '📡 Auto Stream Checker (Live TV)'),
+                    h('select', {
+                      className: 'form-input',
+                      value: autoCheck,
+                      onChange: e => setAutoCheck(e.target.value)
+                    },
+                      h('option', { value: 'disabled' }, 'Disabled (معطل)'),
+                      h('option', { value: 'once' }, 'Once on load (مرة واحدة عند فتح الصفحة)'),
+                      h('option', { value: '1' }, 'Every 1 Minute (كل دقيقة)'),
+                      h('option', { value: '5' }, 'Every 5 Minutes (كل 5 دقائق)'),
+                      h('option', { value: '10' }, 'Every 10 Minutes (كل 10 دقائق)')
+                    )
+                  )
+                )
+              ),
+
+              !isActiveM3u && h('form', {onSubmit:handleSaveCreds, style:{borderBottom:'1px solid var(--border)',paddingBottom:'1.25rem',marginTop:'1rem'}},
+                h('div', {className:'settings-grid'},
+                  isEditAdmin && h('div', {className:'form-group'},
+                    h('label', {className:'form-label'}, 'Server Domain'),
+                    h('input', {className:'form-input',type:'text',value:editCreds.domain,onChange:e=>setEditCreds(p=>({...p,domain:e.target.value})),placeholder:'http://server.com',required:true})
+                  ),
+                  h('div', {className:'form-group'},
+                    h('label', {className:'form-label'}, 'Username'),
+                    h('input', {className:'form-input',type:'text',value:editCreds.username,onChange:e=>setEditCreds(p=>({...p,username:e.target.value})),required:true})
+                  ),
+                  h('div', {className:'form-group'},
+                    h('label', {className:'form-label'}, 'Password'),
+                    h('input', {className:'form-input',type:'password',value:editCreds.password,onChange:e=>setEditCreds(p=>({...p,password:e.target.value})),required:true})
+                  ),
+                  h('div', {className:'form-group'},
+                    h('label', {className:'form-label'}, '📁 Download Folder'),
+                    h('div', {className:'save-dir-row'},
+                      h('div', {className:'save-dir-display', title:saveDir}, saveDir||'Default Downloads'),
+                      h('button', {type:'button',className:'btn btn-ghost btn-sm',onClick:handleBrowse}, 'Browse...')
+                    )
+                  ),
+                  h('div', {className:'form-group'},
+                    h('label', {className:'form-label'}, '📡 Auto Stream Checker (Live TV)'),
+                    h('select', {
+                      className: 'form-input',
+                      value: autoCheck,
+                      onChange: e => setAutoCheck(e.target.value)
+                    },
+                      h('option', { value: 'disabled' }, 'Disabled (معطل)'),
+                      h('option', { value: 'once' }, 'Once on load (مرة واحدة عند فتح الصفحة)'),
+                      h('option', { value: '1' }, 'Every 1 Minute (كل دقيقة)'),
+                      h('option', { value: '5' }, 'Every 5 Minutes (كل 5 دقائق)'),
+                      h('option', { value: '10' }, 'Every 10 Minutes (كل 10 دقائق)')
+                    )
+                  )
+                ),
+                h('div', {style:{marginTop:'1rem'}}, h('button', {type:'submit',className:'btn btn-indigo'}, '💾 Save Settings'))
+              ),
+
+              // Software Update Section
               h('div', {
                 style: {
                   borderTop: '1px solid var(--border)',
@@ -2355,7 +2989,7 @@
                 }
               },
                 h('div', null,
-                  h('h4', {style:{fontSize:'0.85rem',fontWeight:700}}, `🔄 Software Update ${appVersion ? '(Current: v' + appVersion + ')' : ''}`),
+                  h('h4', {style:{fontSize:'0.85rem',fontWeight:700}}, `💾 Software Update ${appVersion ? '(Current: v' + appVersion + ')' : ''}`),
                   h('p', {style:{fontSize:'0.72rem',color:'var(--text-sub)'}}, 'Check and download the latest version from GitHub.')
                 ),
                 h('button', {
@@ -2366,6 +3000,8 @@
                   onClick: handleUpdate
                 }, updating ? 'Updating...' : 'Check for Updates')
               ),
+
+              // Data & Cache Management Section
               h('div', {
                 style: {
                   borderTop: '1px solid var(--border)',
@@ -2406,71 +3042,13 @@
                     }
                   }
                 }, 'Clear Cache')
-              ),
-
-            )
-          ),
-
+              )
+            );
+          })(),
 
 
-          // Continue Watching Row
-          continueWatching.length > 0 && ['movies', 'series', 'favorites', 'recents'].includes(activeTab) && h('div', { className: 'continue-watching-section' },
-            h('h3', { style: { fontFamily: 'var(--font-title)', fontWeight: 700, fontSize: '1rem', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' } }, '🕒 Continue Watching'),
-            h('div', { className: 'continue-watching-grid' },
-              continueWatching.map(cw => {
-                const pct = cw.duration > 0 ? (cw.position / cw.duration) * 100 : 0;
-                return h('div', {
-                  key: cw.id,
-                  className: 'continue-card',
-                  onClick: () => {
-                    let streamUrl = '';
-                    if (cw.type === 'movie') {
-                      streamUrl = getApiUrl(`/api/stream?url=${encodeURIComponent(`${creds.domain}/movie/${creds.username}/${creds.password}/${cw.id}.m3u8`)}`);
-                    } else if (cw.type === 'series') {
-                      streamUrl = getApiUrl(`/api/stream?url=${encodeURIComponent(`${creds.domain}/series/${creds.username}/${creds.password}/${cw.id}.m3u8`)}`);
-                    }
-                    if (streamUrl) {
-                      setPlayerState({
-                        title: cw.title,
-                        url: streamUrl,
-                        streamId: cw.id,
-                        isLive: false,
-                        streamIcon: cw.stream_icon
-                      });
-                    }
-                  }
-                },
-                  h('button', {
-                    className: 'continue-delete-btn',
-                    title: 'Remove progress',
-                    onClick: (e) => {
-                      e.stopPropagation();
-                      apiFetch('/api/playback-position/delete', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ stream_id: String(cw.id) })
-                      }).then(() => {
-                        fetchContinueWatching();
-                        toast('Playback position deleted', 'success');
-                      });
-                    }
-                  }, '✕'),
-                  h('div', { className: 'continue-poster' },
-                    cw.stream_icon
-                      ? h('img', { src: cw.stream_icon, onError: (e) => { e.target.style.display = 'none'; } })
-                      : h('span', { className: 'fallback-icon' }, cw.type === 'movie' ? '🎬' : '📺'),
-                    h('div', { className: 'continue-progress-bar' },
-                      h('div', { className: 'continue-progress-fill', style: { width: `${pct}%` } })
-                    )
-                  ),
-                  h('div', { className: 'continue-info' },
-                    h('span', { className: 'continue-title' }, cw.title),
-                    h('span', { className: 'continue-time' }, `${formatTime(cw.position)} / ${formatTime(cw.duration)}`)
-                  )
-                );
-              })
-            )
-          ),
+
+
 
           // Section Header
           activeTab !== 'multiview' && h('div', {className:'section-bar'},
@@ -2527,7 +3105,8 @@
                         item, type: 'movie',
                         isFav: isFavorite(item.stream_id, 'movie'),
                         onToggleFav: () => toggleFavorite(item, 'movie'),
-                        onClick: (i) => setDetailItem(i)
+                        onClick: (i) => setDetailItem(i),
+                        progress: playbackProgressMap[String(item.stream_id)]
                       }))
                     )
                   ),
@@ -2539,7 +3118,8 @@
                         item, type: 'series',
                         isFav: isFavorite(item.series_id, 'series'),
                         onToggleFav: () => toggleFavorite(item, 'series'),
-                        onClick: (i) => setSeriesItem(i)
+                        onClick: (i) => setSeriesItem(i),
+                        progress: playbackProgressMap[String(item.series_id)]
                       }))
                     )
                   )
@@ -2622,9 +3202,42 @@
                             onToggleFav: () => toggleFavorite(item, itemType),
                             catName: catNameFor(item),
                             onRemove: activeTab === 'recents' ? () => handleRemoveRecent(item, itemType) : null,
-                            onClick: (i) => { (itemType==='series') ? setSeriesItem(i) : setDetailItem(i); },
+                            onClick: (i) => {
+                              if (activeTab === 'recents') {
+                                if (itemType === 'series') {
+                                  setSeriesItem(i);
+                                } else {
+                                  const playlistItems = items.filter(itm => itm.type !== 'series');
+                                  const playlist = playlistItems.map(itm => {
+                                    const itmId = itm.stream_id || itm.id;
+                                    const itmType = itm.type || (itm.stream_id ? 'movie' : 'live');
+                                    let itmUrl = '';
+                                    if (itmType === 'movie') {
+                                      itmUrl = getApiUrl(`/api/stream?url=${encodeURIComponent(`${creds.domain}/movie/${creds.username}/${creds.password}/${itmId}.m3u8`)}`);
+                                    } else if (itmType === 'live') {
+                                      itmUrl = getApiUrl(`/api/stream?url=${encodeURIComponent(`${creds.domain}/live/${creds.username}/${creds.password}/${itmId}.m3u8`)}`);
+                                    }
+                                    return {
+                                      title: itm.name,
+                                      url: itmUrl,
+                                      streamId: itmId,
+                                      isLive: itmType === 'live',
+                                      type: itmType,
+                                      rawItem: itm,
+                                      streamIcon: itm.stream_icon
+                                    };
+                                  });
+                                  const targetId = i.stream_id || i.id;
+                                  const plIdx = playlistItems.findIndex(itm => (itm.stream_id || itm.id) === targetId);
+                                  handleWatch(i, itemType, null, null, playlist, plIdx >= 0 ? plIdx : 0);
+                                }
+                              } else {
+                                (itemType === 'series') ? setSeriesItem(i) : setDetailItem(i);
+                              }
+                            },
                             autoCheck: autoCheck !== 'disabled',
-                            checkTriggerToken: checkTriggerToken
+                            checkTriggerToken: checkTriggerToken,
+                            progress: playbackProgressMap[String(itemId)]
                           });
                         })
                       )

@@ -249,6 +249,27 @@ CACHED_LIVE_CATS = None
 downloads_db = {}
 downloads_lock = threading.Lock()
 
+def apply_active_profile_creds():
+    global config
+    profiles = config.get("profiles", [])
+    active_id = config.get("active_profile_id")
+    if active_id:
+        active_prof = None
+        for p in profiles:
+            if p.get("id") == active_id:
+                active_prof = p
+                break
+        if active_prof:
+            ptype = active_prof.get("type", "xtream")
+            if ptype == "xtream":
+                config["domain"] = active_prof.get("domain", "")
+                config["username"] = active_prof.get("username", "")
+                config["password"] = active_prof.get("password", "")
+            else:
+                config["domain"] = "http://m3u.local"
+                config["username"] = active_id
+                config["password"] = "m3u"
+
 def load_config():
     global config
     if os.path.exists(CONFIG_FILE):
@@ -259,6 +280,10 @@ def load_config():
         except Exception as e:
             print(f"Error loading config: {e}")
             
+    if "profiles" not in config:
+        config["profiles"] = []
+    if "active_profile_id" not in config:
+        config["active_profile_id"] = None
     if "favorites" not in config:
         config["favorites"] = []
     if "recents" not in config:
@@ -268,9 +293,10 @@ def load_config():
     if "playback_positions" not in config:
         config["playback_positions"] = {}
 
+    apply_active_profile_creds()
 
     # Normalize domain to remove trailing slashes
-    if config["domain"]:
+    if config.get("domain"):
         config["domain"] = config["domain"].rstrip('/')
 
 def save_config():
@@ -399,6 +425,8 @@ def get_iptv_expiry_date():
     
     if not (domain and username and password):
         return None
+    if domain == "http://m3u.local":
+        return "Unlimited"
         
     url = f"{domain.rstrip('/')}/player_api.php?username={username}&password={password}"
     try:
@@ -496,6 +524,277 @@ def clear_persistent_caches():
             except:
                 pass
 
+# ── M3U Parser & Profiles Resolving Module ──
+M3U_STREAMS_MAP = {}
+
+def resolve_m3u_url(url):
+    if not url:
+        return ""
+    if "m3u.local" in url:
+        parsed = urllib.parse.urlparse(url)
+        path = parsed.path
+        filename = os.path.basename(path)
+        stream_id, _ = os.path.splitext(filename)
+        real_url = M3U_STREAMS_MAP.get(stream_id)
+        if real_url:
+            return real_url
+    return url
+
+def parse_series_name(title):
+    import re
+    match = re.search(r'^(.*?)\s+S(\d+)\s*E(\d+)', title, re.IGNORECASE)
+    if match:
+        return match.group(1).strip(), int(match.group(2)), int(match.group(3)), f"S{match.group(2)}E{match.group(3)}"
+    
+    match = re.search(r'^(.*?)\s+(\d+)x(\d+)', title, re.IGNORECASE)
+    if match:
+        return match.group(1).strip(), int(match.group(2)), int(match.group(3)), f"S{match.group(2)}E{match.group(3)}"
+
+    return title.strip(), 1, 1, "S01E01"
+
+def parse_extinf_line(line):
+    import re
+    attribs = {}
+    comma_idx = line.rfind(",")
+    if comma_idx != -1:
+        name = line[comma_idx+1:].strip()
+        attribs["name"] = name
+        attr_part = line[8:comma_idx].strip()
+    else:
+        attribs["name"] = ""
+        attr_part = line[8:].strip()
+        
+    pattern = re.compile(r'([\w-]+)\s*=\s*["\']([^"\']*)["\']')
+    for match in pattern.finditer(attr_part):
+        key = match.group(1).lower()
+        val = match.group(2)
+        if key in ["tvg-logo", "logo"]:
+            attribs["logo"] = val
+        elif key in ["group-title", "group"]:
+            attribs["group"] = val
+        elif key == "tvg-name":
+            attribs["tvg_name"] = val
+            
+    if not attribs["name"] and attribs.get("tvg_name"):
+        attribs["name"] = attribs["tvg_name"]
+        
+    return attribs
+
+def group_series_from_m3u(series_episodes):
+    grouped_series = {}
+    episodes_map = {}
+    import hashlib
+    
+    for ep in series_episodes:
+        title = ep["name"]
+        group = ep["category_id"]
+        logo = ep["stream_icon"]
+        
+        series_name, season, episode_num, code = parse_series_name(title)
+        series_id = "ser_" + hashlib.md5(f"{series_name}_{group}".encode('utf-8')).hexdigest()[:10]
+        
+        if series_id not in grouped_series:
+            grouped_series[series_id] = {
+                "series_id": series_id,
+                "name": series_name,
+                "stream_icon": logo,
+                "category_id": group,
+                "type": "series"
+            }
+            episodes_map[series_id] = {}
+            
+        if season not in episodes_map[series_id]:
+            episodes_map[series_id][season] = []
+            
+        episodes_map[series_id][season].append({
+            "id": ep["stream_id"],
+            "title": title,
+            "episode_num": episode_num,
+            "container_extension": "mp4",
+            "url": ep["url"],
+            "stream_icon": logo
+        })
+        
+    for ser_id in episodes_map:
+        for seas in episodes_map[ser_id]:
+            episodes_map[ser_id][seas] = sorted(episodes_map[ser_id][seas], key=lambda x: x["episode_num"])
+            
+    return grouped_series, episodes_map
+
+def parse_m3u_content(content_or_filepath):
+    import io
+    import re
+    categories = {"live": set(), "movie": set(), "series": set()}
+    live_streams = []
+    movies = []
+    series_episodes = []
+
+    if os.path.exists(content_or_filepath):
+        f = open(content_or_filepath, 'r', encoding='utf-8', errors='ignore')
+    else:
+        f = io.StringIO(content_or_filepath)
+
+    current_inf = None
+    stream_counter = 0
+
+    for line in f:
+        line = line.strip()
+        if not line:
+            continue
+        if line.startswith("#EXTM3U"):
+            continue
+        elif line.startswith("#EXTINF:"):
+            current_inf = parse_extinf_line(line)
+        elif line.startswith("#") and not line.startswith("#EXTINF"):
+            continue
+        else:
+            if current_inf is not None:
+                url = line
+                name = current_inf.get("name", f"Channel {stream_counter}")
+                logo = current_inf.get("logo", "")
+                group = current_inf.get("group", "Uncategorized")
+                
+                group_lower = group.lower()
+                url_lower = url.lower()
+                
+                is_movie_ext = any(ext in url_lower for ext in [".mp4", ".mkv", ".avi", ".divx", ".flv", ".mov", ".wmv"])
+                is_series_pattern = any(p in name.lower() for p in ["s0", "s1", "s2", "season", "episode", "ep0", "ep1", "ep2"]) or ("x" in name.lower() and re.search(r'\d+x\d+', name.lower()))
+                
+                media_type = "live"
+                if "movie" in group_lower or "vod" in group_lower or "cinema" in group_lower or "أفلام" in group_lower or "سينما" in group_lower or "فيلم" in group_lower or (is_movie_ext and "series" not in group_lower):
+                    media_type = "movie"
+                elif "series" in group_lower or "show" in group_lower or "tv shows" in group_lower or "tv series" in group_lower or "مسلسل" in group_lower or "مسلسلات" in group_lower or (is_movie_ext and "series" in group_lower) or is_series_pattern:
+                    media_type = "series"
+                
+                stream_id = f"m3u_{stream_counter}"
+                stream_counter += 1
+                
+                item = {
+                    "stream_id": stream_id,
+                    "name": name,
+                    "stream_icon": logo,
+                    "category_id": group,
+                    "url": url,
+                    "type": media_type
+                }
+                
+                if media_type == "movie":
+                    movies.append(item)
+                    categories["movie"].add(group)
+                elif media_type == "series":
+                    series_episodes.append(item)
+                    categories["series"].add(group)
+                else:
+                    categories["live"].add(group)
+                    item["num"] = len(live_streams) + 1
+                    live_streams.append(item)
+                    
+                current_inf = None
+
+    f.close()
+    
+    grouped_series, episodes_map = group_series_from_m3u(series_episodes)
+    
+    return {
+        "live": live_streams,
+        "movies": movies,
+        "series": list(grouped_series.values()),
+        "episodes": episodes_map,
+        "categories": {
+            "live": [{"category_id": g, "category_name": g} for g in sorted(categories["live"])],
+            "movie": [{"category_id": g, "category_name": g} for g in sorted(categories["movie"])],
+            "series": [{"category_id": g, "category_name": g} for g in sorted(categories["series"])]
+        }
+    }
+
+def rebuild_m3u_streams_map():
+    global M3U_STREAMS_MAP
+    M3U_STREAMS_MAP = {}
+    try:
+        live_data = load_from_persistent_cache("live")
+        if live_data:
+            for item in live_data:
+                if "stream_id" in item and "url" in item:
+                    M3U_STREAMS_MAP[item["stream_id"]] = item["url"]
+        movies_data = load_from_persistent_cache("movies")
+        if movies_data:
+            for item in movies_data:
+                if "stream_id" in item and "url" in item:
+                    M3U_STREAMS_MAP[item["stream_id"]] = item["url"]
+        series_data = load_from_persistent_cache("series")
+        if series_data:
+            for s in series_data:
+                s_id = s.get("series_id")
+                if s_id:
+                    s_info = load_from_persistent_cache(f"series_info_{s_id}")
+                    if s_info and "episodes" in s_info:
+                        for season in s_info["episodes"].values():
+                            for ep in season:
+                                if "id" in ep and "url" in ep:
+                                    M3U_STREAMS_MAP[ep["id"]] = ep["url"]
+    except Exception as e:
+        print(f"Error rebuilding M3U streams map: {e}")
+
+def load_profile_data(force=False):
+    profiles = config.get("profiles", [])
+    active_id = config.get("active_profile_id")
+    if not active_id:
+        return
+        
+    active_prof = None
+    for p in profiles:
+        if p.get("id") == active_id:
+            active_prof = p
+            break
+            
+    if not active_prof:
+        return
+        
+    ptype = active_prof.get("type")
+    if ptype == "xtream":
+        return
+        
+    # Check if cache exists
+    movies_cache = load_from_persistent_cache("movies")
+    if not force and movies_cache is not None:
+        rebuild_m3u_streams_map()
+        return
+        
+    print(f"[~] Parsing M3U content for profile: {active_prof.get('name')}...")
+    source = ""
+    if ptype == "m3u_url":
+        url = active_prof.get("m3u_url")
+        if url:
+            try:
+                req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    source = resp.read().decode('utf-8', errors='ignore')
+            except Exception as e:
+                print(f"Error downloading M3U URL: {e}")
+                return
+    elif ptype == "m3u_file":
+        filepath = active_prof.get("m3u_file_path")
+        if filepath and os.path.exists(filepath):
+            source = filepath
+            
+    if not source:
+        return
+        
+    parsed = parse_m3u_content(source)
+    if parsed:
+        save_to_persistent_cache("live", parsed["live"])
+        save_to_persistent_cache("movies", parsed["movies"])
+        save_to_persistent_cache("series", parsed["series"])
+        save_to_persistent_cache("live_cats", parsed["categories"]["live"])
+        save_to_persistent_cache("vod_cats", parsed["categories"]["movie"])
+        save_to_persistent_cache("series_cats", parsed["categories"]["series"])
+        
+        for ser_id, seasons_data in parsed["episodes"].items():
+            save_to_persistent_cache(f"series_info_{ser_id}", {"episodes": seasons_data})
+            
+        rebuild_m3u_streams_map()
+        print(f"[+] M3U Parsing complete. Cached channels, movies, and series.")
+
 def load_cache_stale_check(name):
     try:
         filepath = get_cache_filepath(name)
@@ -545,8 +844,11 @@ class DownloadThread(threading.Thread):
         password = config["password"]
         save_dir = config["save_dir"]
         
-        url_path = "movie" if self.media_type == "movie" else "series"
-        url = f"{domain}/{url_path}/{username}/{password}/{self.stream_id}.m3u8"
+        if domain == "http://m3u.local":
+            url = M3U_STREAMS_MAP.get(self.stream_id, "")
+        else:
+            url_path = "movie" if self.media_type == "movie" else "series"
+            url = f"{domain}/{url_path}/{username}/{password}/{self.stream_id}.m3u8"
         
         # Setup file path (append _sample for sample download)
         filename_ext = f"{self.filename}_sample.ts" if self.limit_bytes else f"{self.filename}.ts"
@@ -1024,6 +1326,12 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
             
         elif path == "/api/recents":
             self.send_json({"items": config.get("recents", [])})
+            
+        elif path == "/api/profiles":
+            self.send_json({
+                "profiles": config.get("profiles", []),
+                "active_profile_id": config.get("active_profile_id")
+            })
                 
         else:
             # Serve Static Files
@@ -1041,6 +1349,7 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
                 return super().do_GET()
 
     def do_POST(self):
+        global CACHED_MOVIES, CACHED_SERIES, CACHED_SERIES_INFO, CACHED_LIVE, CACHED_VOD_CATS, CACHED_SERIES_CATS, CACHED_LIVE_CATS
         parsed_path = urllib.parse.urlparse(self.path)
         path = parsed_path.path
         
@@ -1058,7 +1367,6 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
                 save_config()
                 # Invalidate cache on disk and memory
                 clear_persistent_caches()
-                global CACHED_MOVIES, CACHED_SERIES, CACHED_SERIES_INFO, CACHED_LIVE, CACHED_VOD_CATS, CACHED_SERIES_CATS, CACHED_LIVE_CATS
                 CACHED_MOVIES = None
                 CACHED_SERIES = None
                 CACHED_SERIES_INFO = {}
@@ -1124,7 +1432,10 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
                 username  = config["username"]
                 password  = config["password"]
                 save_dir  = config["save_dir"]
-                live_url  = f"{domain}/live/{username}/{password}/{stream_id}.ts"
+                if domain == "http://m3u.local":
+                    live_url = M3U_STREAMS_MAP.get(stream_id, "")
+                else:
+                    live_url  = f"{domain}/live/{username}/{password}/{stream_id}.ts"
                 filepath  = os.path.join(save_dir, f"{clean_name}.ts")
                 
                 t = threading.Thread(daemon=True)
@@ -1453,6 +1764,190 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
                     self.send_json({"status": "cancelled"})
             except Exception as e:
                 self.send_error(500, f"Import error: {e}")
+        elif path == "/api/profiles/add":
+            try:
+                data = json.loads(body)
+                prof_name = data.get("name")
+                prof_type = data.get("type", "xtream")
+                
+                if not prof_name:
+                    self.send_error(400, "Missing profile name")
+                    return
+                
+                prof_id = f"prof_{int(time.time() * 1000)}"
+                new_profile = {
+                    "id": prof_id,
+                    "name": prof_name,
+                    "type": prof_type
+                }
+                
+                if prof_type == "xtream":
+                    new_profile["domain"] = data.get("domain", "")
+                    new_profile["username"] = data.get("username", "")
+                    new_profile["password"] = data.get("password", "")
+                elif prof_type == "m3u_url":
+                    new_profile["m3u_url"] = data.get("m3u_url", "")
+                    
+                if "profiles" not in config:
+                    config["profiles"] = []
+                config["profiles"].append(new_profile)
+                save_config()
+                self.send_json({"status": "success", "profile": new_profile})
+            except Exception as e:
+                self.send_error(400, f"Error adding profile: {e}")
+
+        elif path == "/api/profiles/select":
+            try:
+                data = json.loads(body)
+                prof_id = data.get("id")
+                
+                profiles = config.get("profiles", [])
+                matched = any(p.get("id") == prof_id for p in profiles)
+                if prof_id and not matched:
+                    self.send_error(404, "Profile not found")
+                    return
+                
+                config["active_profile_id"] = prof_id
+                apply_active_profile_creds()
+                save_config()
+                
+                CACHED_MOVIES = None
+                CACHED_SERIES = None
+                CACHED_SERIES_INFO = {}
+                CACHED_LIVE = None
+                CACHED_VOD_CATS = None
+                CACHED_SERIES_CATS = None
+                CACHED_LIVE_CATS = None
+                
+                if prof_id:
+                    load_profile_data(force=True)
+                
+                res_data = config.copy()
+                res_data["version"] = VERSION
+                res_data["exp_date"] = get_iptv_expiry_date()
+                self.send_json({"status": "success", "creds": res_data})
+            except Exception as e:
+                self.send_error(400, f"Error selecting profile: {e}")
+
+        elif path == "/api/profiles/delete":
+            try:
+                data = json.loads(body)
+                prof_id = data.get("id")
+                if not prof_id:
+                    self.send_error(400, "Missing profile id")
+                    return
+                
+                profiles = config.get("profiles", [])
+                target_p = None
+                for p in profiles:
+                    if p.get("id") == prof_id:
+                        target_p = p
+                        break
+                
+                if not target_p:
+                    self.send_error(404, "Profile not found")
+                    return
+                
+                if target_p.get("type") == "m3u_file":
+                    filepath = target_p.get("m3u_file_path")
+                    if filepath and os.path.exists(filepath):
+                        try:
+                            os.remove(filepath)
+                        except Exception as fe:
+                            print(f"Error deleting M3U file: {fe}")
+                
+                config["profiles"] = [p for p in profiles if p.get("id") != prof_id]
+                
+                if config.get("active_profile_id") == prof_id:
+                    config["active_profile_id"] = None
+                    config["domain"] = "http://fd.otbnver.club"
+                    config["username"] = ""
+                    config["password"] = ""
+                    
+                save_config()
+                
+                CACHED_MOVIES = None
+                CACHED_SERIES = None
+                CACHED_SERIES_INFO = {}
+                CACHED_LIVE = None
+                CACHED_VOD_CATS = None
+                CACHED_SERIES_CATS = None
+                CACHED_LIVE_CATS = None
+                
+                self.send_json({"status": "success"})
+            except Exception as e:
+                self.send_error(400, f"Error deleting profile: {e}")
+
+        elif path == "/api/profiles/upload-m3u":
+            try:
+                ctype = self.headers.get('Content-Type')
+                if not ctype or 'multipart/form-data' not in ctype:
+                    self.send_error(400, "Content-Type must be multipart/form-data")
+                    return
+                
+                parts = ctype.split('boundary=')
+                if len(parts) < 2:
+                    self.send_error(400, "Missing boundary in Content-Type")
+                    return
+                boundary = ('--' + parts[1]).encode('utf-8')
+                
+                content_length = int(self.headers.get('Content-Length', 0))
+                raw_body = self.rfile.read(content_length)
+                
+                parts = raw_body.split(boundary)
+                profile_name = "Uploaded Profile"
+                file_content = b""
+                
+                for part in parts:
+                    if not part or part.strip() == b"--":
+                        continue
+                    if b"\r\n\r\n" in part:
+                        headers, part_body = part.split(b"\r\n\r\n", 1)
+                    elif b"\n\n" in part:
+                        headers, part_body = part.split(b"\n\n", 1)
+                    else:
+                        continue
+                        
+                    headers_str = headers.decode('utf-8', errors='ignore')
+                    if part_body.endswith(b"\r\n"):
+                        part_body = part_body[:-2]
+                    elif part_body.endswith(b"\n"):
+                        part_body = part_body[:-1]
+                        
+                    if 'name="name"' in headers_str:
+                        profile_name = part_body.decode('utf-8', errors='ignore').strip()
+                    elif 'name="file"' in headers_str:
+                        file_content = part_body
+                
+                if not file_content:
+                    self.send_error(400, "No file uploaded")
+                    return
+                
+                uploads_dir = os.path.join(get_cache_dir(), "uploads")
+                os.makedirs(uploads_dir, exist_ok=True)
+                
+                prof_id = f"prof_{int(time.time() * 1000)}"
+                filename = f"{prof_id}.m3u"
+                filepath = os.path.join(uploads_dir, filename)
+                
+                with open(filepath, "wb") as f_out:
+                    f_out.write(file_content)
+                
+                new_profile = {
+                    "id": prof_id,
+                    "name": profile_name,
+                    "type": "m3u_file",
+                    "m3u_file_path": filepath
+                }
+                
+                if "profiles" not in config:
+                    config["profiles"] = []
+                config["profiles"].append(new_profile)
+                save_config()
+                self.send_json({"status": "success", "profile": new_profile})
+            except Exception as e:
+                self.send_error(500, f"Error processing upload: {e}")
+
         elif path == "/api/update":
             try:
                 import py_compile
@@ -1601,7 +2096,10 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
         if not (domain and username and password):
             self.send_json({"online": False})
             return
-        stream_url = f"{domain.rstrip('/')}/live/{username}/{password}/{stream_id}.ts"
+        if domain == "http://m3u.local":
+            stream_url = M3U_STREAMS_MAP.get(stream_id, "")
+        else:
+            stream_url = f"{domain.rstrip('/')}/live/{username}/{password}/{stream_id}.ts"
         req = urllib.request.Request(stream_url, method='GET', headers={'User-Agent': 'Mozilla/5.0'})
         try:
             with urllib.request.urlopen(req, timeout=1.8) as response:
