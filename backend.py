@@ -297,7 +297,7 @@ def get_cache_dir():
     os.makedirs(cache_dir, exist_ok=True)
     return cache_dir
 
-VERSION = "2.2.1"
+VERSION = "2.3.0"
 
 # Global Configurations & Cache
 CONFIG_FILE = os.path.join(get_base_dir(), "config.json")
@@ -2644,12 +2644,12 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
                 if os.path.exists(backend_local):
                     try: os.remove(backend_local)
                     except: pass
-                os.rename(backend_tmp, backend_local)
+                os.replace(backend_tmp, backend_local)
                 
                 if os.path.exists(index_local):
                     try: os.remove(index_local)
                     except: pass
-                os.rename(index_tmp, index_local)
+                os.replace(index_tmp, index_local)
                 
                 # Swap logo files
                 for lf_tmp, lf_local in logo_tmps:
@@ -2657,7 +2657,7 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
                         if os.path.exists(lf_local):
                             try: os.remove(lf_local)
                             except: pass
-                        os.rename(lf_tmp, lf_local)
+                        os.replace(lf_tmp, lf_local)
                 
                 self.send_json({
                     "status": "success", 
