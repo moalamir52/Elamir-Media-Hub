@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📡</text></svg>" />
+  <link rel="icon" href="/logo.ico" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Elamir Media Hub — by Mohamed Elamir</title>
   <meta name="description" content="Premium IPTV streaming & downloader platform by Mohamed Elamir. Watch live TV, movies, and series directly in your browser." />
@@ -835,7 +835,33 @@
         lockPrompt:'Enter the access password to continue', unlock:'Unlock', password:'Password', wrongPassword:'Wrong password ❌',
         connecting:'Connecting to stream...', reconnecting:'Reconnecting…', unavailable:'Stream Unavailable', tryDownload:'You can try Download instead.',
         more:'More', mini:'Mini', cast:'Cast / AirPlay', casting:'Casting', connectingCast:'Connecting...', language:'Language',
-        liveLabel:'Live TV', allCategories:'All Categories'
+        liveLabel:'Live TV', allCategories:'All Categories',
+        username: 'Username', serverUrl: 'Server URL', m3uPlaylistUrl: 'M3U Playlist URL',
+        clickSelectM3u: 'Click to select M3U File', selected: 'Selected', addProfile: 'Add Profile',
+        activeM3uSub: 'Active M3U Subscription', localM3uLoaded: 'Local M3U Playlist file loaded.',
+        downloadFolder: 'Download Folder', browse: 'Browse...', autoStreamChecker: 'Auto Stream Checker (Live TV)',
+        disabled: 'Disabled', onceOnLoad: 'Once on load', every1Min: 'Every 1 Minute', every5Min: 'Every 5 Minutes', every10Min: 'Every 10 Minutes',
+        serverDomain: 'Server Domain', leaveBlankKeepCurrent: 'Leave blank to keep current', saveSettings: 'Save Settings',
+        appLockNetwork: 'App Lock — Network Devices', appLockDesc: 'Require a password when opening the app from other devices on the network. This computer always opens without a password.',
+        newPasswordChange: 'New password (to change)', setPassword: 'Set a password', change: 'Change', enable: 'Enable', disable: 'Disable',
+        dns: 'DNS', dnsDesc: 'Switch DNS to bypass ISP blocking/throttling of your IPTV provider.',
+        wholeSystemAdmin: 'Whole system (needs Admin)', streamingOnlyNoAdmin: 'Streaming only (no Admin needed)',
+        currentSystemDns: 'Current system DNS', proxyTunnel: 'Proxy / Tunnel',
+        proxyDesc: 'Route all provider traffic through your proxy/VPN so the ISP only sees an encrypted connection — defeats throttling, connection resets (RST) and IP blocking.',
+        save: 'Save', test: 'Test', softwareUpdate: 'Software Update',
+        softwareUpdateDesc: 'Check and download the latest version from GitHub.', updating: 'Updating...', checkForUpdates: 'Check for Updates',
+        dataCacheMgmt: 'Data & Cache Management', dataCacheDesc: 'Clear locally cached channels, movies, and series lists to force a fresh reload.',
+        clearCache: 'Clear Cache', itemsFound: 'items found', importVideo: 'Import Video', clearHistory: 'Clear History',
+        typeSearchBox: 'Type in the search box to query movies, series, and channels globally.',
+        searching: 'Searching...', noResultsFound: 'No results found for', liveChannels: 'Live Channels', tvSeries: 'TV Series',
+        layout: 'Layout', sideBySide: 'Side-by-Side (2 slots)', quadScreen: 'Quad Screen (4 slots)', clearAllSlots: 'Clear All Slots',
+        clickAddChannelSlot: 'Click to Add Channel to Slot', m3uUrlTab: 'M3U URL', m3uFileTab: 'M3U File',
+        xtreamApiTab: 'Xtream API', settingsProfiles: 'Settings & Profiles', expiry: 'Expiry',
+        profilesManager: 'Profiles Manager', noProfilesAdded: 'No profiles added yet. Configure default settings below.',
+        addSubscriptionProfile: 'Add Subscription Profile', profileName: 'Profile Name', profileNamePlaceholder: 'e.g. My Premium IPTV',
+        selectLiveChannel: 'Select Live Channel', searchChannelName: 'Search channel name...', noChannelsFound: 'No channels found.',
+        muted: 'Muted', unmuted: 'Unmuted', remove: 'Remove', playbackFailed: 'Playback failed',
+        enabled: 'Enabled', current: 'Current', xtreamCodes: 'Xtream Codes', select: 'Select', allChannels: 'All Channels'
       },
       ar: {
         movies:'أفلام', series:'مسلسلات', live:'البث المباشر', favorites:'المفضلة', recent:'الأخيرة',
@@ -848,7 +874,33 @@
         lockPrompt:'أدخل كلمة المرور للمتابعة', unlock:'فتح', password:'كلمة المرور', wrongPassword:'كلمة مرور خاطئة ❌',
         connecting:'جارٍ الاتصال بالبث...', reconnecting:'إعادة الاتصال…', unavailable:'البث غير متاح', tryDownload:'يمكنك التحميل بدلاً من ذلك.',
         more:'المزيد', mini:'مصغّر', cast:'بث / AirPlay', casting:'يبث', connectingCast:'جارٍ الاتصال...', language:'اللغة',
-        liveLabel:'البث المباشر', allCategories:'كل التصنيفات'
+        liveLabel:'البث المباشر', allCategories:'كل التصنيفات',
+        username: 'اسم المستخدم', serverUrl: 'رابط السيرفر', m3uPlaylistUrl: 'رابط قائمة M3U',
+        clickSelectM3u: 'اضغط لاختيار ملف M3U', selected: 'تم تحديد', addProfile: 'إضافة ملف تعريف',
+        activeM3uSub: 'اشتراك M3U النشط', localM3uLoaded: 'تم تحميل ملف تشغيل M3U المحلي.',
+        downloadFolder: 'مجلد التحميل', browse: 'تصفح...', autoStreamChecker: 'فاحص البث التلقائي (القنوات المباشرة)',
+        disabled: 'معطل', onceOnLoad: 'مرة واحدة عند التحميل', every1Min: 'كل دقيقة', every5Min: 'كل 5 دقائق', every10Min: 'كل 10 دقائق',
+        serverDomain: 'نطاق السيرفر', leaveBlankKeepCurrent: 'اتركه فارغاً للاحتفاظ بالوضع الحالي', saveSettings: 'حفظ الإعدادات',
+        appLockNetwork: 'قفل التطبيق — أجهزة الشبكة', appLockDesc: 'طلب كلمة مرور عند فتح التطبيق من أجهزة أخرى على الشبكة. هذا الكمبيوتر يفتح دائماً بدون كلمة مرور.',
+        newPasswordChange: 'كلمة مرور جديدة (لتغييرها)', setPassword: 'تعيين كلمة مرور', change: 'تغيير', enable: 'تفعيل', disable: 'تعطيل',
+        dns: 'DNS', dnsDesc: 'تغيير الـ DNS لتجاوز حظر أو تقييد مزود الـ IPTV من قبل شركة الإنترنت.',
+        wholeSystemAdmin: 'كامل النظام (يتطلب صلاحيات مدير)', streamingOnlyNoAdmin: 'البث فقط (لا يتطلب صلاحيات مدير)',
+        currentSystemDns: 'DNS النظام الحالي', proxyTunnel: 'بروكسي / نفق الاتصال',
+        proxyDesc: 'توجيه كل حركة مرور المزود عبر البروكسي/الشبكة الخاصة لتظهر مشفرة لشركة الإنترنت — يتغلب على التقييد، وإعادة تعيين الاتصال (RST) وحجب الآي بي.',
+        save: 'حفظ', test: 'اختبار', softwareUpdate: 'تحديث البرنامج',
+        softwareUpdateDesc: 'التحقق وتحميل أحدث إصدار من GitHub.', updating: 'جارٍ التحديث...', checkForUpdates: 'التحقق من التحديثات',
+        dataCacheMgmt: 'إدارة البيانات والمخزن المؤقت', dataCacheDesc: 'مسح القنوات والأفلام والمسلسلات المخزنة مؤقتاً لفرض إعادة تحميل جديدة.',
+        clearCache: 'مسح الذاكرة المؤقتة', itemsFound: 'عنصر تم العثور عليه', importVideo: 'استيراد فيديو', clearHistory: 'مسح السجل',
+        typeSearchBox: 'اكتب في مربع البحث للاستعلام عن الأفلام والمسلسلات والقنوات بشكل شامل.',
+        searching: 'جارٍ البحث...', noResultsFound: 'لم يتم العثور على نتائج لـ', liveChannels: 'القنوات المباشرة', tvSeries: 'المسلسلات التلفزيونية',
+        layout: 'التخطيط', sideBySide: 'جنبًا إلى جنب (شاشتان)', quadScreen: 'شاشة رباعية (4 شاشات)', clearAllSlots: 'تنظيف جميع الشاشات',
+        clickAddChannelSlot: 'انقر لإضافة قناة إلى الشاشة', m3uUrlTab: 'رابط M3U', m3uFileTab: 'ملف M3U',
+        xtreamApiTab: 'واجهة Xtream', settingsProfiles: 'الإعدادات والحسابات', expiry: 'تاريخ الانتهاء',
+        profilesManager: 'إدارة الحسابات', noProfilesAdded: 'لم يتم إضافة أي حسابات بعد. قم بتهيئة الإعدادات الافتراضية أدناه.',
+        addSubscriptionProfile: 'إضافة اشتراك جديد', profileName: 'اسم ملف التعريف', profileNamePlaceholder: 'مثال: اشتراكي المميز',
+        selectLiveChannel: 'اختر القناة المباشرة', searchChannelName: 'ابحث عن اسم القناة...', noChannelsFound: 'لم يتم العثور على قنوات.',
+        muted: 'مكتوم', unmuted: 'صوت مفعّل', remove: 'إزالة', playbackFailed: 'فشل التشغيل',
+        enabled: 'مفعّل', current: 'الحالي', xtreamCodes: 'Xtream Codes', select: 'اختيار', allChannels: 'كل القنوات'
       },
       fr: {
         movies:'Films', series:'Séries TV', live:'TV en direct', favorites:'Favoris', recent:'Récents',
@@ -861,7 +913,33 @@
         lockPrompt:'Entrez le mot de passe pour continuer', unlock:'Déverrouiller', password:'Mot de passe', wrongPassword:'Mot de passe incorrect ❌',
         connecting:'Connexion au flux...', reconnecting:'Reconnexion…', unavailable:'Flux indisponible', tryDownload:'Vous pouvez télécharger à la place.',
         more:'Plus', mini:'Mini', cast:'Cast / AirPlay', casting:'Diffusion', connectingCast:'Connexion...', language:'Langue',
-        liveLabel:'TV en direct', allCategories:'Toutes les catégories'
+        liveLabel:'TV en direct', allCategories:'Toutes les catégories',
+        username: "Nom d'utilisateur", serverUrl: 'URL du Serveur', m3uPlaylistUrl: 'URL de la playlist M3U',
+        clickSelectM3u: 'Cliquez pour sélectionner un fichier M3U', selected: 'Sélectionné', addProfile: 'Ajouter un profil',
+        activeM3uSub: 'Abonnement M3U actif', localM3uLoaded: 'Fichier de playlist M3U local chargé.',
+        downloadFolder: 'Dossier de téléchargement', browse: 'Parcourir...', autoStreamChecker: 'Vérificateur de flux automatique (TV en direct)',
+        disabled: 'Désactivé', onceOnLoad: 'Une fois au chargement', every1Min: 'Toutes les 1 minute', every5Min: 'Toutes les 5 minutes', every10Min: 'Toutes les 10 minutes',
+        serverDomain: 'Domaine du serveur', leaveBlankKeepCurrent: "Laissez vide pour conserver l'actuel", saveSettings: 'Enregistrer les paramètres',
+        appLockNetwork: "Verrouillage de l'application — Appareils réseau", appLockDesc: "Exiger un mot de passe lors de l'ouverture de l'application à partir d'autres appareils sur le réseau. Cet ordinateur s'ouvre toujours sans mot de passe.",
+        newPasswordChange: 'Nouveau mot de passe (pour changer)', setPassword: 'Définir un mot de passe', change: 'Modifier', enable: 'Activer', disable: 'Désactiver',
+        dns: 'DNS', dnsDesc: 'Changer le DNS pour contourner le blocage/limitation FAI de votre fournisseur IPTV.',
+        wholeSystemAdmin: 'Système complet (nécessite Admin)', streamingOnlyNoAdmin: "Streaming uniquement (pas d'Admin requis)",
+        currentSystemDns: 'DNS système actuel', proxyTunnel: 'Proxy / Tunnel',
+        proxyDesc: "Acheminez tout le trafic du fournisseur via votre proxy/VPN afin que le FAI ne voie qu'une connexion cryptée — élimine le bridage, les réinitialisations de connexion (RST) et le blocage d'IP.",
+        save: 'Enregistrer', test: 'Tester', softwareUpdate: 'Mise à jour du logiciel',
+        softwareUpdateDesc: 'Vérifier et télécharger la dernière version depuis GitHub.', updating: 'Mise à jour...', checkForUpdates: 'Vérifier les mises à jour',
+        dataCacheMgmt: 'Gestion des données et du cache', dataCacheDesc: 'Effacer les listes de chaînes, films et séries mises en cache localement pour forcer un rechargement.',
+        clearCache: 'Vider le cache', itemsFound: 'éléments trouvés', importVideo: 'Importer une vidéo', clearHistory: "Effacer l'historique",
+        typeSearchBox: 'Tapez dans la zone de recherche pour rechercher des films, séries et chaînes dans le monde entier.',
+        searching: 'Recherche...', noResultsFound: 'Aucun résultat trouvé pour', liveChannels: 'Chaînes en direct', tvSeries: 'Séries TV',
+        layout: 'Mise en page', sideBySide: 'Côte à côte (2 écrans)', quadScreen: 'Écran quadruple (4 écrans)', clearAllSlots: 'Vider tous les écrans',
+        clickAddChannelSlot: "Cliquez pour ajouter une chaîne à l'écran", m3uUrlTab: 'M3U URL', m3uFileTab: 'Fichier M3U',
+        xtreamApiTab: 'Xtream API', settingsProfiles: 'Paramètres et profils', expiry: 'Expiration',
+        profilesManager: 'Gestionnaire de profils', noProfilesAdded: 'Aucun profil ajouté pour le moment. Configurez les paramètres par défaut ci-dessous.',
+        addSubscriptionProfile: 'Ajouter un profil d\'abonnement', profileName: 'Nom du profil', profileNamePlaceholder: 'ex: Mon IPTV Premium',
+        selectLiveChannel: 'Sélectionner la chaîne en direct', searchChannelName: 'Rechercher le nom de la chaîne...', noChannelsFound: 'Aucune chaîne trouvée.',
+        muted: 'Muet', unmuted: 'Non muet', remove: 'Retirer', playbackFailed: 'Échec de la lecture',
+        enabled: 'Activé', current: 'Actuel', xtreamCodes: 'Xtream Codes', select: 'Sélectionner', allChannels: 'Toutes les chaînes'
       }
     };
     let currentLang = localStorage.getItem('hub_lang') || 'en';
@@ -1828,7 +1906,7 @@
       };
 
       useEffect(() => {
-        if (type === 'live' && autoCheck) {
+        if (type === 'live' && autoCheck && (item.stream_id || item.id)) {
           handleCheckHealth();
         }
       }, [item.stream_id, item.id, autoCheck, checkTriggerToken]);
@@ -2033,7 +2111,7 @@
         ),
         status === 'error' && h('div', { style: { position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#e74c3c', background: '#000', padding: '1rem', fontSize: '0.8rem' } },
           h('span', { style: { fontSize: '1.5rem', marginBottom: '0.25rem' } }, '⚠️'),
-          'Playback failed'
+          t('playbackFailed')
         ),
         h('video', {
           ref: videoRef,
@@ -2047,21 +2125,22 @@
             className: 'btn btn-ghost btn-sm',
             style: { padding: '0.2rem 0.4rem', fontSize: '0.7rem', color: '#fff', background: isMuted ? 'rgba(231, 76, 60, 0.7)' : 'rgba(46, 204, 113, 0.7)', border: 'none' },
             onClick: () => setIsMuted(!isMuted)
-          }, isMuted ? '🔇 Muted' : '🔊 Unmuted'),
+          }, isMuted ? '🔇 ' + t('muted') : '🔊 ' + t('unmuted')),
           h('button', {
             className: 'btn btn-ghost btn-sm',
             style: { padding: '0.2rem 0.4rem', fontSize: '0.7rem', color: '#fff', background: 'rgba(0,0,0,0.5)', border: 'none' },
             onClick: onRemove
-          }, '✕ Remove')
+          }, '✕ ' + t('remove'))
         )
       );
     }
 
     // ── Multi-View Channel Picker Modal ──
-    function ChannelPickerModal({ onClose, onSelect, creds }) {
+    function ChannelPickerModal({ onClose, onSelect, creds, favs }) {
       const [channels, setChannels] = useState([]);
       const [search, setSearch] = useState('');
       const [loading, setLoading] = useState(true);
+      const [pickerTab, setPickerTab] = useState('all');
 
       useEffect(() => {
         apiFetch('/api/live?limit=300')
@@ -2073,13 +2152,52 @@
           .finally(()=>setLoading(false));
       }, []);
 
-      const filtered = channels.filter(ch => ch.name && ch.name.toLowerCase().includes(search.toLowerCase()));
+      const liveFavs = (favs || [])
+        .filter(f => f.type === 'live')
+        .map(f => ({
+          stream_id: f.id,
+          name: f.name,
+          stream_icon: f.stream_icon,
+          category_id: f.category_id
+        }));
+
+      const sourceList = pickerTab === 'favs' ? liveFavs : channels;
+      const filtered = sourceList.filter(ch => ch.name && ch.name.toLowerCase().includes(search.toLowerCase()));
 
       return h('div', { className: 'modal-backdrop', onClick: onClose },
         h('div', { className: 'modal-box', onClick: e => e.stopPropagation(), style: { maxWidth: '600px' } },
           h('div', { style: { padding: '1rem 1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'between', alignItems: 'center' } },
-            h('h3', { style: { fontFamily: 'var(--font-title)', fontWeight: 700 } }, 'Select Live Channel'),
+            h('h3', { style: { fontFamily: 'var(--font-title)', fontWeight: 700 } }, t('selectLiveChannel')),
             h('button', { className: 'btn btn-ghost btn-sm', onClick: onClose, style: { marginLeft: 'auto' } }, '✕')
+          ),
+          h('div', { style: { padding: '0.75rem 1.5rem', background: 'var(--bg-base)', borderBottom: '1px solid var(--border)', display: 'flex', gap: '0.5rem' } },
+            [
+              { id: 'all', label: t('allChannels') },
+              { id: 'favs', label: t('favorites') }
+            ].map(tab => {
+              const isSel = pickerTab === tab.id;
+              return h('button', {
+                key: tab.id,
+                type: 'button',
+                onClick: () => setPickerTab(tab.id),
+                style: {
+                  flex: 1,
+                  background: isSel ? 'var(--indigo)' : 'var(--bg-card)',
+                  color: isSel ? '#fff' : 'var(--text-sub)',
+                  border: '1px solid ' + (isSel ? 'var(--indigo)' : 'var(--border)'),
+                  borderRadius: 'var(--radius-md)',
+                  padding: '0.4rem 0.75rem',
+                  fontSize: '0.82rem',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.35rem'
+                }
+              }, tab.id === 'favs' ? '❤️ ' + tab.label : '📡 ' + tab.label);
+            })
           ),
           h('div', { style: { padding: '0.75rem 1.5rem', background: 'var(--bg-base)' } },
             h('div', { className: 'search-wrap', style: { maxWidth: 'none' } },
@@ -2087,16 +2205,16 @@
               h('input', {
                 className: 'search-input',
                 type: 'text',
-                placeholder: 'Search channel name...',
+                placeholder: t('searchChannelName'),
                 value: search,
                 onChange: e => setSearch(e.target.value)
               })
             )
           ),
           h('div', { style: { padding: '1rem 1.5rem', overflowY: 'auto', maxHeight: '400px', display: 'flex', flexDirection: 'column', gap: '0.5rem' } },
-            loading && h('div', { style: { display: 'flex', justifyContent: 'center', padding: '2rem' } }, h('div', { className: 'spinner' })),
-            !loading && filtered.length === 0 && h('p', { style: { color: 'var(--text-dim)', textAlign: 'center' } }, 'No channels found.'),
-            !loading && filtered.map(ch => h('div', {
+            loading && pickerTab === 'all' && h('div', { style: { display: 'flex', justifyContent: 'center', padding: '2rem' } }, h('div', { className: 'spinner' })),
+            (!loading || pickerTab === 'favs') && filtered.length === 0 && h('p', { style: { color: 'var(--text-dim)', textAlign: 'center' } }, t('noChannelsFound')),
+            (!loading || pickerTab === 'favs') && filtered.map(ch => h('div', {
               key: ch.stream_id,
               style: { display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem 0.75rem', background: 'var(--bg-card2)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', cursor: 'pointer' },
               onClick: () => onSelect(ch)
@@ -3317,9 +3435,9 @@
                 className:'cat-select', value:lang, onChange:e=>setLang(e.target.value),
                 title:t('language'), style:{marginRight:'0.5rem',padding:'0.3rem 0.5rem'}
               },
-                h('option', {value:'en'}, '🇬🇧 EN'),
-                h('option', {value:'ar'}, '🇸🇦 عربي'),
-                h('option', {value:'fr'}, '🇫🇷 FR')
+                h('option', {value:'en'}, 'English'),
+                h('option', {value:'ar'}, 'العربية'),
+                h('option', {value:'fr'}, 'Français')
               ),
               h('button', {
                 className:'btn btn-ghost btn-sm',
@@ -3398,7 +3516,7 @@
             return h('div', {ref: settingsRef, className:'settings-panel'},
               // Header
               h('div', {style:{display:'flex',alignItems:'center',justifyContent:'space-between',borderBottom:'1px solid var(--border)',paddingBottom:'0.75rem'}},
-                h('h3', {style:{fontFamily:'var(--font-title)',fontWeight:700,fontSize:'1.05rem',margin:0}}, '⚙️ Settings & Profiles'),
+                h('h3', {style:{fontFamily:'var(--font-title)',fontWeight:700,fontSize:'1.05rem',margin:0}}, '⚙️ ' + t('settingsProfiles')),
                 h('div', {style:{display:'flex',gap:'0.75rem',fontSize:'0.82rem',color:'var(--text-sub)',alignItems:'center'}},
                   isAdmin && h('span', null, `🌐 ${domainShort}`),
                   h('span', null, `👤 ${creds.username||'?'}`),
@@ -3411,22 +3529,22 @@
                       fontWeight: 'bold',
                       fontSize: '0.75rem'
                     }
-                  }, `📅 Expiry: ${creds.exp_date}`)
+                  }, `📅 ${t('expiry')}: ${creds.exp_date}`)
                 )
               ),
 
               // Profiles Section
               h('div', {style:{borderBottom:'1px solid var(--border)',paddingBottom:'1.25rem',marginTop:'0.75rem'}},
-                h('h4', {style:{fontFamily:'var(--font-title)',fontWeight:600,fontSize:'0.9rem',marginBottom:'0.5rem',color:'var(--text-main)'}}, '👤 Profiles Manager (إدارة الحسابات)'),
+                h('h4', {style:{fontFamily:'var(--font-title)',fontWeight:600,fontSize:'0.9rem',marginBottom:'0.5rem',color:'var(--text-main)'}}, '👤 ' + t('profilesManager')),
                 
                 // Profiles List
                 h('div', {style:{display:'flex',flexDirection:'column',gap:'0.5rem',marginBottom:'1rem'}},
                   profiles.length === 0 && h('div', {style:{padding:'0.75rem',background:'var(--bg-base)',borderRadius:'var(--radius-md)',fontSize:'0.82rem',color:'var(--text-sub)',textAlign:'center'}},
-                    'No profiles added yet. Configure default settings below.'
+                    t('noProfilesAdded')
                   ),
                   profiles.map(p => {
                     const isActive = p.id === activeProfileId;
-                    const typeLabel = p.type === 'xtream' ? 'Xtream Codes' : p.type === 'm3u_url' ? 'M3U URL' : 'M3U File';
+                    const typeLabel = p.type === 'xtream' ? t('xtreamCodes') : p.type === 'm3u_url' ? t('m3uUrlTab') : t('m3uFileTab');
                     const typeColor = p.type === 'xtream' ? 'var(--indigo)' : p.type === 'm3u_url' ? 'var(--cyan)' : 'var(--gold)';
                     
                     return h('div', {
@@ -3462,13 +3580,13 @@
                       ),
                       h('div', {style:{display:'flex',alignItems:'center',gap:'0.4rem',flexShrink:0}},
                         isActive 
-                          ? h('span', {style:{color:'var(--green)',fontSize:'0.78rem',fontWeight:'bold'}}, '✓ Active')
+                          ? h('span', {style:{color:'var(--green)',fontSize:'0.78rem',fontWeight:'bold'}}, '✓ ' + t('active'))
                           : h('button', {
                               type: 'button',
                               className: 'btn btn-ghost btn-sm',
                               style: {padding:'0.25rem 0.5rem', fontSize:'0.75rem', color:'var(--text-main)'},
                               onClick: () => handleSelectProfile(p.id)
-                            }, 'Select'),
+                            }, t('select')),
                         h('button', {
                           type: 'button',
                           className: 'btn btn-ghost btn-sm',
@@ -3482,16 +3600,16 @@
 
                 // Add Profile Form
                 h('div', {style:{background:'var(--bg-base)',padding:'0.85rem',borderRadius:'var(--radius-md)',border:'1px solid var(--border)'}},
-                  h('h5', {style:{fontSize:'0.82rem',fontWeight:700,marginBottom:'0.6rem',color:'var(--text-main)'}}, '➕ Add Subscription Profile'),
+                  h('h5', {style:{fontSize:'0.82rem',fontWeight:700,marginBottom:'0.6rem',color:'var(--text-main)'}}, '➕ ' + t('addSubscriptionProfile')),
                   h('form', {onSubmit: handleAddProfile, style:{display:'flex',flexDirection:'column',gap:'0.75rem'}},
                     h('div', {className:'form-group'},
-                      h('label', {className:'form-label'}, 'Profile Name'),
+                      h('label', {className:'form-label'}, t('profileName')),
                       h('input', {
                         className:'form-input',
                         type:'text',
                         value:newProfileName,
                         onChange:e=>setNewProfileName(e.target.value),
-                        placeholder:'e.g. My Premium IPTV',
+                        placeholder: t('profileNamePlaceholder'),
                         required:true
                       })
                     ),
@@ -3508,9 +3626,9 @@
                       }
                     },
                       [
-                        { id: 'xtream', label: 'Xtream API' },
-                        { id: 'm3u_url', label: 'M3U URL' },
-                        { id: 'm3u_file', label: 'M3U File' }
+                        { id: 'xtream', label: t('xtreamApiTab') },
+                        { id: 'm3u_url', label: t('m3uUrlTab') },
+                        { id: 'm3u_file', label: t('m3uFileTab') }
                       ].map(tab => {
                         const isSel = addProfileType === tab.id;
                         return h('button', {
@@ -3536,7 +3654,7 @@
                     // Conditional Inputs
                     addProfileType === 'xtream' && h('div', {style:{display:'flex',flexDirection:'column',gap:'0.6rem'}},
                       h('div', {className:'form-group'},
-                        h('label', {className:'form-label'}, 'Server URL'),
+                        h('label', {className:'form-label'}, t('serverUrl')),
                         h('input', {
                           className:'form-input',
                           type:'text',
@@ -3548,7 +3666,7 @@
                       ),
                       h('div', {style:{display:'flex',gap:'0.5rem'}},
                         h('div', {className:'form-group', style:{flex:1}},
-                          h('label', {className:'form-label'}, 'Username'),
+                          h('label', {className:'form-label'}, t('username')),
                           h('input', {
                             className:'form-input',
                             type:'text',
@@ -3559,7 +3677,7 @@
                           })
                         ),
                         h('div', {className:'form-group', style:{flex:1}},
-                          h('label', {className:'form-label'}, 'Password'),
+                          h('label', {className:'form-label'}, t('password')),
                           h('input', {
                             className:'form-input',
                             type:'password',
@@ -3573,7 +3691,7 @@
                     ),
                     
                     addProfileType === 'm3u_url' && h('div', {className:'form-group'},
-                      h('label', {className:'form-label'}, 'M3U Playlist URL'),
+                      h('label', {className:'form-label'}, t('m3uPlaylistUrl')),
                       h('input', {
                         className:'form-input',
                         type:'text',
@@ -3614,14 +3732,14 @@
                       }),
                       h('span', {style:{fontSize:'1.5rem',marginBottom:'0.25rem'}}, '📁'),
                       h('span', {style:{fontSize:'0.75rem',fontWeight:'bold',color:'var(--text-main)'}}, 
-                        newM3uFile ? `Selected: ${newM3uFile.name}` : 'Click to select M3U File'
+                        newM3uFile ? `${t('selected')}: ${newM3uFile.name}` : t('clickSelectM3u')
                       ),
                       newM3uFile && h('span', {style:{fontSize:'0.65rem',color:'var(--text-sub)',marginTop:'0.2rem'}}, 
                         `${(newM3uFile.size / (1024*1024)).toFixed(2)} MB`
                       )
                     ),
                     
-                    h('button', {type:'submit', className:'btn btn-indigo', style:{width:'100%',marginTop:'0.25rem'}}, 'Add Profile')
+                    h('button', {type:'submit', className:'btn btn-indigo', style:{width:'100%',marginTop:'0.25rem'}}, t('addProfile'))
                   )
                 )
               ),
@@ -3642,32 +3760,32 @@
                 },
                   h('span', {style:{fontSize:'1.5rem'}}, '⚡'),
                   h('div', {style:{display:'flex',flexDirection:'column',gap:'0.2rem'}},
-                    h('h4', {style:{fontSize:'0.82rem',fontWeight:'bold',margin:0,color:'var(--text-main)'}}, `Active M3U Subscription: ${activeProfile.name}`),
+                    h('h4', {style:{fontSize:'0.82rem',fontWeight:'bold',margin:0,color:'var(--text-main)'}}, `${t('activeM3uSub')}: ${activeProfile.name}`),
                     h('p', {style:{fontSize:'0.72rem',color:'var(--text-sub)',margin:0}}, 
-                      activeProfile.type === 'm3u_file' ? 'Local M3U Playlist file loaded.' : `M3U URL: ${activeProfile.m3u_url}`
+                      activeProfile.type === 'm3u_file' ? t('localM3uLoaded') : `${t('m3uPlaylistUrl')}: ${activeProfile.m3u_url}`
                     )
                   )
                 ),
                 h('div', {className:'settings-grid'},
                   h('div', {className:'form-group'},
-                    h('label', {className:'form-label'}, '📁 Download Folder'),
+                    h('label', {className:'form-label'}, '📁 ' + t('downloadFolder')),
                     h('div', {className:'save-dir-row'},
                       h('div', {className:'save-dir-display', title:saveDir}, saveDir||'Default Downloads'),
-                      h('button', {type:'button',className:'btn btn-ghost btn-sm',onClick:handleBrowse}, 'Browse...')
+                      h('button', {type:'button',className:'btn btn-ghost btn-sm',onClick:handleBrowse}, t('browse'))
                     )
                   ),
                   h('div', {className:'form-group'},
-                    h('label', {className:'form-label'}, '📡 Auto Stream Checker (Live TV)'),
+                    h('label', {className:'form-label'}, '📡 ' + t('autoStreamChecker')),
                     h('select', {
                       className: 'form-input',
                       value: autoCheck,
                       onChange: e => setAutoCheck(e.target.value)
                     },
-                      h('option', { value: 'disabled' }, 'Disabled (معطل)'),
-                      h('option', { value: 'once' }, 'Once on load (مرة واحدة عند فتح الصفحة)'),
-                      h('option', { value: '1' }, 'Every 1 Minute (كل دقيقة)'),
-                      h('option', { value: '5' }, 'Every 5 Minutes (كل 5 دقائق)'),
-                      h('option', { value: '10' }, 'Every 10 Minutes (كل 10 دقائق)')
+                      h('option', { value: 'disabled' }, t('disabled')),
+                      h('option', { value: 'once' }, t('onceOnLoad')),
+                      h('option', { value: '1' }, t('every1Min')),
+                      h('option', { value: '5' }, t('every5Min')),
+                      h('option', { value: '10' }, t('every10Min'))
                     )
                   )
                 )
@@ -3676,74 +3794,74 @@
               !isActiveM3u && h('form', {onSubmit:handleSaveCreds, style:{borderBottom:'1px solid var(--border)',paddingBottom:'1.25rem',marginTop:'1rem'}},
                 h('div', {className:'settings-grid'},
                   isEditAdmin && h('div', {className:'form-group'},
-                    h('label', {className:'form-label'}, 'Server Domain'),
+                    h('label', {className:'form-label'}, t('serverDomain')),
                     h('input', {className:'form-input',type:'text',value:editCreds.domain,onChange:e=>setEditCreds(p=>({...p,domain:e.target.value})),placeholder:'http://server.com',required:true})
                   ),
                   h('div', {className:'form-group'},
-                    h('label', {className:'form-label'}, 'Username'),
+                    h('label', {className:'form-label'}, t('username')),
                     h('input', {className:'form-input',type:'text',value:editCreds.username,onChange:e=>setEditCreds(p=>({...p,username:e.target.value})),required:true})
                   ),
                   h('div', {className:'form-group'},
-                    h('label', {className:'form-label'}, 'Password'),
-                    h('input', {className:'form-input',type:'password',value:editCreds.password,onChange:e=>setEditCreds(p=>({...p,password:e.target.value})),placeholder:'Leave blank to keep current'})
+                    h('label', {className:'form-label'}, t('password')),
+                    h('input', {className:'form-input',type:'password',value:editCreds.password,onChange:e=>setEditCreds(p=>({...p,password:e.target.value})),placeholder:t('leaveBlankKeepCurrent')})
                   ),
                   h('div', {className:'form-group'},
-                    h('label', {className:'form-label'}, '📁 Download Folder'),
+                    h('label', {className:'form-label'}, '📁 ' + t('downloadFolder')),
                     h('div', {className:'save-dir-row'},
                       h('div', {className:'save-dir-display', title:saveDir}, saveDir||'Default Downloads'),
-                      h('button', {type:'button',className:'btn btn-ghost btn-sm',onClick:handleBrowse}, 'Browse...')
+                      h('button', {type:'button',className:'btn btn-ghost btn-sm',onClick:handleBrowse}, t('browse'))
                     )
                   ),
                   h('div', {className:'form-group'},
-                    h('label', {className:'form-label'}, '📡 Auto Stream Checker (Live TV)'),
+                    h('label', {className:'form-label'}, '📡 ' + t('autoStreamChecker')),
                     h('select', {
                       className: 'form-input',
                       value: autoCheck,
                       onChange: e => setAutoCheck(e.target.value)
                     },
-                      h('option', { value: 'disabled' }, 'Disabled (معطل)'),
-                      h('option', { value: 'once' }, 'Once on load (مرة واحدة عند فتح الصفحة)'),
-                      h('option', { value: '1' }, 'Every 1 Minute (كل دقيقة)'),
-                      h('option', { value: '5' }, 'Every 5 Minutes (كل 5 دقائق)'),
-                      h('option', { value: '10' }, 'Every 10 Minutes (كل 10 دقائق)')
+                      h('option', { value: 'disabled' }, t('disabled')),
+                      h('option', { value: 'once' }, t('onceOnLoad')),
+                      h('option', { value: '1' }, t('every1Min')),
+                      h('option', { value: '5' }, t('every5Min')),
+                      h('option', { value: '10' }, t('every10Min'))
                     )
                   )
                 ),
-                h('div', {style:{marginTop:'1rem'}}, h('button', {type:'submit',className:'btn btn-indigo'}, '💾 Save Settings'))
+                h('div', {style:{marginTop:'1rem'}}, h('button', {type:'submit',className:'btn btn-indigo'}, '💾 ' + t('saveSettings')))
               ),
 
               // App Lock Section (password gate for network devices)
               h('div', {style:{borderTop:'1px solid var(--border)',paddingTop:'1rem',marginTop:'1rem'}},
                 h('h4', {style:{fontSize:'0.85rem',fontWeight:700,marginBottom:'0.25rem'}},
-                  `🔒 App Lock — Network Devices ${authState.locked ? '(Enabled ✓)' : '(Disabled)'}`),
+                  `🔒 ${t('appLockNetwork')} ${authState.locked ? `(${t('enabled')} ✓)` : `(${t('disabled')})`}`),
                 h('p', {style:{fontSize:'0.72rem',color:'var(--text-sub)',marginBottom:'0.6rem'}},
-                  'Require a password when opening the app from other devices on the network. This computer always opens without a password.'),
+                  t('appLockDesc')),
                 h('div', {style:{display:'flex',gap:'0.5rem',flexWrap:'wrap',alignItems:'center'}},
-                  h('input', {className:'form-input',type:'password',value:lockPw,placeholder:authState.locked?'New password (to change)':'Set a password',style:{flex:'1',minWidth:'180px'},onChange:e=>setLockPw(e.target.value)}),
-                  h('button', {type:'button',className:'btn btn-indigo',onClick:()=>handleSetAppPassword(false)}, authState.locked?'Change':'Enable'),
-                  authState.locked && h('button', {type:'button',className:'btn btn-ghost',onClick:()=>handleSetAppPassword(true)}, 'Disable')
+                  h('input', {className:'form-input',type:'password',value:lockPw,placeholder:authState.locked?t('newPasswordChange'):t('setPassword'),style:{flex:'1',minWidth:'180px'},onChange:e=>setLockPw(e.target.value)}),
+                  h('button', {type:'button',className:'btn btn-indigo',onClick:()=>handleSetAppPassword(false)}, authState.locked?t('change'):t('enable')),
+                  authState.locked && h('button', {type:'button',className:'btn btn-ghost',onClick:()=>handleSetAppPassword(true)}, t('disable'))
                 )
               ),
 
               // DNS Section (bypass ISP blocking of the IPTV provider)
               h('div', {style:{borderTop:'1px solid var(--border)',paddingTop:'1rem',marginTop:'1rem'}},
-                h('h4', {style:{fontSize:'0.85rem',fontWeight:700,marginBottom:'0.25rem'}}, '🌐 DNS'),
+                h('h4', {style:{fontSize:'0.85rem',fontWeight:700,marginBottom:'0.25rem'}}, '🌐 ' + t('dns')),
                 h('p', {style:{fontSize:'0.72rem',color:'var(--text-sub)',marginBottom:'0.7rem'}},
-                  'Switch DNS to bypass ISP blocking/throttling of your IPTV provider.' +
-                  (dnsInfo && dnsInfo.system && dnsInfo.system.length ? ' — Current system DNS: ' + dnsInfo.system.join(', ') : '')),
+                  t('dnsDesc') +
+                  (dnsInfo && dnsInfo.system && dnsInfo.system.length ? ' — ' + t('currentSystemDns') + ': ' + dnsInfo.system.join(', ') : '')),
                 h('div', {style:{marginBottom:'0.8rem'}},
-                  h('div', {style:{fontSize:'0.75rem',fontWeight:700,color:'var(--text-sub)',marginBottom:'0.35rem'}}, '💻 Whole system (needs Admin)'),
+                  h('div', {style:{fontSize:'0.75rem',fontWeight:700,color:'var(--text-sub)',marginBottom:'0.35rem'}}, '💻 ' + t('wholeSystemAdmin')),
                   h('div', {style:{display:'flex',gap:'0.4rem',flexWrap:'wrap'}},
-                    [['auto','Auto'],['cloudflare','Cloudflare'],['google','Google'],['adguard','AdGuard'],['quad9','Quad9']].map(o =>
+                    [['auto',t('auto')],['cloudflare','Cloudflare'],['google','Google'],['adguard','AdGuard'],['quad9','Quad9']].map(o =>
                       h('button', {key:o[0],type:'button',disabled:dnsBusy,
                         className:`btn btn-sm ${dnsInfo && dnsInfo.systemProvider===o[0] ? 'btn-indigo':'btn-ghost'}`,
                         onClick:()=>setDns('system',o[0])}, o[1]))
                   )
                 ),
                 h('div', null,
-                  h('div', {style:{fontSize:'0.75rem',fontWeight:700,color:'var(--text-sub)',marginBottom:'0.35rem'}}, '📡 Streaming only (no Admin needed)'),
+                  h('div', {style:{fontSize:'0.75rem',fontWeight:700,color:'var(--text-sub)',marginBottom:'0.35rem'}}, '📡 ' + t('streamingOnlyNoAdmin')),
                   h('div', {style:{display:'flex',gap:'0.4rem',flexWrap:'wrap'}},
-                    [['auto','Off'],['cloudflare','Cloudflare'],['google','Google'],['adguard','AdGuard'],['quad9','Quad9']].map(o => {
+                    [['auto',t('off')],['cloudflare','Cloudflare'],['google','Google'],['adguard','AdGuard'],['quad9','Quad9']].map(o => {
                       const appVal = dnsInfo ? dnsInfo.app : 'off';
                       const active = (o[0]==='auto') ? (appVal==='off') : (appVal===o[0]);
                       return h('button', {key:o[0],type:'button',disabled:dnsBusy,
@@ -3757,16 +3875,16 @@
               // Proxy / Tunnel Section (route provider traffic to bypass ISP interference)
               h('div', {style:{borderTop:'1px solid var(--border)',paddingTop:'1rem',marginTop:'1rem'}},
                 h('h4', {style:{fontSize:'0.85rem',fontWeight:700,marginBottom:'0.25rem'}},
-                  `🛡️ Proxy / Tunnel ${proxyUrl ? '(Enabled ✓)' : '(Disabled)'}`),
+                  `🛡️ ${t('proxyTunnel')} ${proxyUrl ? `(${t('enabled')} ✓)` : `(${t('disabled')})`}`),
                 h('p', {style:{fontSize:'0.72rem',color:'var(--text-sub)',marginBottom:'0.6rem'}},
-                  'Route all provider traffic through your proxy/VPN so the ISP only sees an encrypted connection — defeats throttling, connection resets (RST) and IP blocking.'),
+                  t('proxyDesc')),
                 h('div', {style:{display:'flex',gap:'0.5rem',flexWrap:'wrap',alignItems:'center'}},
                   h('input', {className:'form-input',type:'text',value:proxyUrl,
                     placeholder:'http://host:port  or  http://user:pass@host:port',
                     style:{flex:'1',minWidth:'220px'},onChange:e=>setProxyUrl(e.target.value)}),
-                  h('button', {type:'button',disabled:proxyBusy,className:'btn btn-indigo',onClick:()=>saveProxy(proxyUrl)}, 'Save'),
-                  h('button', {type:'button',disabled:proxyBusy,className:'btn btn-ghost',onClick:testProxy}, 'Test'),
-                  proxyUrl && h('button', {type:'button',disabled:proxyBusy,className:'btn btn-ghost',style:{color:'var(--red)'},onClick:()=>{setProxyUrl('');saveProxy('');}}, 'Disable')
+                  h('button', {type:'button',disabled:proxyBusy,className:'btn btn-indigo',onClick:()=>saveProxy(proxyUrl)}, t('save')),
+                  h('button', {type:'button',disabled:proxyBusy,className:'btn btn-ghost',onClick:testProxy}, t('test')),
+                  proxyUrl && h('button', {type:'button',disabled:proxyBusy,className:'btn btn-ghost',style:{color:'var(--red)'},onClick:()=>{setProxyUrl('');saveProxy('');}}, t('disable'))
                 )
               ),
 
@@ -3782,8 +3900,8 @@
                 }
               },
                 h('div', null,
-                  h('h4', {style:{fontSize:'0.85rem',fontWeight:700}}, `💾 Software Update ${appVersion ? '(Current: v' + appVersion + ')' : ''}`),
-                  h('p', {style:{fontSize:'0.72rem',color:'var(--text-sub)'}}, 'Check and download the latest version from GitHub.')
+                  h('h4', {style:{fontSize:'0.85rem',fontWeight:700}}, `💾 ${t('softwareUpdate')} ${appVersion ? `(${t('current')}: v${appVersion})` : ''}`),
+                  h('p', {style:{fontSize:'0.72rem',color:'var(--text-sub)'}}, t('softwareUpdateDesc'))
                 ),
                 h('button', {
                   type: 'button',
@@ -3791,7 +3909,7 @@
                   style: { color: updating ? 'var(--text-dim)' : '#fff' },
                   disabled: updating,
                   onClick: handleUpdate
-                }, updating ? 'Updating...' : 'Check for Updates')
+                }, updating ? t('updating') : t('checkForUpdates'))
               ),
 
               // Data & Cache Management Section
@@ -3806,8 +3924,8 @@
                 }
               },
                 h('div', null,
-                  h('h4', {style:{fontSize:'0.85rem',fontWeight:700}}, '🧹 Data & Cache Management'),
-                  h('p', {style:{fontSize:'0.72rem',color:'var(--text-sub)'}}, 'Clear locally cached channels, movies, and series lists to force a fresh reload.')
+                  h('h4', {style:{fontSize:'0.85rem',fontWeight:700}}, '🧹 ' + t('dataCacheMgmt')),
+                  h('p', {style:{fontSize:'0.72rem',color:'var(--text-sub)'}}, t('dataCacheDesc'))
                 ),
                 h('button', {
                   type: 'button',
@@ -3834,7 +3952,7 @@
                       toast('Error clearing cache', 'error');
                     }
                   }
-                }, 'Clear Cache')
+                }, t('clearCache'))
               )
             );
           })(),
@@ -3849,18 +3967,18 @@
               h('h2', {className:'section-title'},
                 activeTab==='movies' ? t('titleMovies') : activeTab==='series' ? t('titleSeries') : activeTab==='live' ? t('titleLive') : activeTab==='favorites' ? t('titleFavorites') : activeTab==='library' ? t('titleLibrary') : activeTab === 'search' ? t('titleSearch') : t('titleRecent')
               ),
-              total > 0 && h('span', {className:'section-count'}, `${total.toLocaleString()} items found`)
+              total > 0 && h('span', {className:'section-count'}, `${total.toLocaleString()} ${t('itemsFound')}`)
             ),
             activeTab === 'library' && h('button', {
               className: 'btn btn-indigo btn-sm',
               onClick: handleImportLibrary,
               style: { marginLeft: 'auto' }
-            }, '📥 Import Video'),
+            }, '📥 ' + t('importVideo')),
             activeTab === 'recents' && total > 0 && h('button', {
               className: 'btn btn-ghost btn-sm',
               style: { color: 'var(--red)', borderColor: 'hsla(4,82%,52%,0.3)', marginLeft: 'auto' },
               onClick: handleClearAllRecents
-            }, '🗑️ Clear History')
+            }, '🗑️ ' + t('clearHistory'))
           ),
 
           // Grid or List or Custom Views
@@ -3868,16 +3986,16 @@
             ? h('div', { key: 'view-search', className: 'search-view' },
                 !debSearch && h('div', { className: 'empty-state' },
                   h('span', { className: 'empty-state-icon' }, '🔍'),
-                  h('p', null, 'Type in the search box to query movies, series, and channels globally.')
+                  h('p', null, t('typeSearchBox'))
                 ),
-                debSearch && loading && h('div', { className: 'spinner-wrap' }, h('div', { className: 'spinner' }), h('p', { className: 'spinner-label' }, 'Searching...')),
+                debSearch && loading && h('div', { className: 'spinner-wrap' }, h('div', { className: 'spinner' }), h('p', { className: 'spinner-label' }, t('searching'))),
                 debSearch && !loading && (searchResults.live?.length === 0 && searchResults.movies?.length === 0 && searchResults.series?.length === 0) && h('div', { className: 'empty-state' },
                   h('span', { className: 'empty-state-icon' }, '🔍'),
-                  h('p', null, `No results found for "${debSearch}"`)
+                  h('p', null, `${t('noResultsFound')} "${debSearch}"`)
                 ),
                 debSearch && !loading && h('div', { style: { display: 'flex', flexDirection: 'column', gap: '2rem' } },
                   searchResults.live?.length > 0 && h('div', { className: 'search-section' },
-                    h('h3', { className: 'search-section-title' }, '📡 Live Channels'),
+                    h('h3', { className: 'search-section-title' }, '📡 ' + t('liveChannels')),
                     h('div', { className: 'media-grid' },
                       searchResults.live.map(item => h(MediaCard, {
                         key: `live_${item.stream_id}`,
@@ -3891,7 +4009,7 @@
                     )
                   ),
                   searchResults.movies?.length > 0 && h('div', { className: 'search-section' },
-                    h('h3', { className: 'search-section-title' }, '🎬 Movies'),
+                    h('h3', { className: 'search-section-title' }, t('titleMovies')),
                     h('div', { className: 'media-grid' },
                       searchResults.movies.map(item => h(MediaCard, {
                         key: `movie_${item.stream_id}`,
@@ -3904,7 +4022,7 @@
                     )
                   ),
                   searchResults.series?.length > 0 && h('div', { className: 'search-section' },
-                    h('h3', { className: 'search-section-title' }, '📺 TV Series'),
+                    h('h3', { className: 'search-section-title' }, t('titleSeries')),
                     h('div', { className: 'media-grid' },
                       searchResults.series.map(item => h(MediaCard, {
                         key: `series_${item.series_id}`,
@@ -3922,21 +4040,21 @@
               ? h('div', { key: 'view-multiview', className: 'multiview-container' },
                   h('div', { className: 'multiview-layout-bar' },
                     h('div', { style: { display: 'flex', gap: '0.5rem', alignItems: 'center' } },
-                      h('span', { style: { fontWeight: 600, fontSize: '0.9rem' } }, 'Layout:'),
+                      h('span', { style: { fontWeight: 600, fontSize: '0.9rem' } }, t('layout') + ':'),
                       h('button', {
                         className: `btn btn-sm ${mvLayout === '2' ? 'btn-indigo' : 'btn-ghost'}`,
                         onClick: () => setMvLayout('2')
-                      }, 'Side-by-Side (2 slots)'),
+                      }, t('sideBySide')),
                       h('button', {
                         className: `btn btn-sm ${mvLayout === '4' ? 'btn-indigo' : 'btn-ghost'}`,
                         onClick: () => setMvLayout('4')
-                      }, 'Quad Screen (4 slots)')
+                      }, t('quadScreen'))
                     ),
                     h('button', {
                       className: 'btn btn-ghost btn-sm',
                       style: { color: 'var(--red)', borderColor: 'var(--red)' },
                       onClick: () => setMvSlots([null, null, null, null])
-                    }, '🧹 Clear All Slots')
+                    }, '🧹 ' + t('clearAllSlots'))
                   ),
                   h('div', { className: `multiview-grid layout-${mvLayout}` },
                     (mvLayout === '2' ? [0, 1] : [0, 1, 2, 3]).map(slotIdx => {
@@ -3955,13 +4073,14 @@
                             })
                           : h('div', { className: 'slot-empty', onClick: () => setMvPickerOpen(slotIdx) },
                               h('span', null, '➕'),
-                              h('p', null, `Click to Add Channel to Slot ${slotIdx + 1}`)
+                              h('p', null, `${t('clickAddChannelSlot')} ${slotIdx + 1}`)
                             )
                       );
                     })
                   ),
                   mvPickerOpen !== null && h(ChannelPickerModal, {
                     creds,
+                    favs,
                     onClose: () => setMvPickerOpen(null),
                     onSelect: (ch) => {
                       const newSlots = [...mvSlots];

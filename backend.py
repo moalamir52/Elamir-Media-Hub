@@ -312,7 +312,7 @@ def get_cache_dir():
     os.makedirs(cache_dir, exist_ok=True)
     return cache_dir
 
-VERSION = "2.0"
+VERSION = "2.2"
 
 # Global Configurations & Cache
 CONFIG_FILE = os.path.join(get_base_dir(), "config.json")
