@@ -1149,16 +1149,21 @@
         if (typeof Hls !== 'undefined' && Hls.isSupported()) {
           // A healthy buffer keeps playback smooth (fewer cuts). The "🔴 LIVE"
           // button lets the user jump back to the edge when they want low delay.
+          // maxBufferSize is raised well above the 60MB default so high-bitrate
+          // streams (4K ≈ 40+ Mbps) can build a real cushion of seconds instead of
+          // hitting the byte cap after ~10s and stuttering.
           const hls = new Hls(isLive ? {
             enableWorker: true,
             lowLatencyMode: false,
             liveSyncDurationCount: 4,
             maxBufferLength: 30,
-            maxMaxBufferLength: 90,
+            maxMaxBufferLength: 120,
+            maxBufferSize: 200 * 1000 * 1000,
             backBufferLength: 30
           } : {
             enableWorker: true,
-            maxBufferLength: 30
+            maxBufferLength: 40,
+            maxBufferSize: 200 * 1000 * 1000
           });
           hlsRef.current = hls;
           hls.loadSource(url);
@@ -1971,7 +1976,7 @@
         };
 
         if (typeof Hls !== 'undefined' && Hls.isSupported()) {
-          const hls = new Hls({ enableWorker: true, lowLatencyMode: true });
+          const hls = new Hls({ enableWorker: true, lowLatencyMode: false, maxBufferLength: 30, maxBufferSize: 200 * 1000 * 1000 });
           hlsRef.current = hls;
           hls.loadSource(streamUrl);
           hls.attachMedia(video);
