@@ -30,19 +30,50 @@ def sanitize_filename(name, fallback="download"):
     name = re.sub(r'[<>:"/\\|?*\x00-\x1f]', '-', name).strip().strip('.')
     return name or fallback
 
+def sanitize_subfolder(sub):
+    """Sanitize a relative subfolder path (e.g. 'Series/Season 1'); each component
+    is cleaned so the result always stays inside the save directory."""
+    if not sub:
+        return ""
+    parts = [sanitize_filename(p, "") for p in str(sub).replace("\\", "/").split("/")]
+    return "/".join(p for p in parts if p)
+
+_safe_host_cache = {}
+
+def _open_upstream(url, timeout=15, retries=3):
+    """Open an upstream request, retrying on connection resets/timeouts. This
+    absorbs ISP interference (RST injection / throttled drops) on a per-request
+    basis so the player doesn't notice the glitch. Free and fully local."""
+    last = None
+    for i in range(retries):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            return urllib.request.urlopen(req, timeout=timeout)
+        except Exception as e:
+            last = e
+            time.sleep(min(0.25 * (i + 1), 1.0))
+    raise last
+
 def is_safe_remote_url(raw_url):
     """Return True only for public http(s) hosts. Blocks the proxy from being
-    used to reach loopback/private/link-local addresses (SSRF protection)."""
+    used to reach loopback/private/link-local addresses (SSRF protection).
+    Results are cached per host so streaming doesn't pay a DNS lookup per segment."""
     try:
         parsed = urllib.parse.urlparse(raw_url)
     except Exception:
         return False
     if parsed.scheme not in ("http", "https") or not parsed.hostname:
         return False
+    host = parsed.hostname
+    cached = _safe_host_cache.get(host)
+    if cached is not None:
+        return cached
     try:
-        infos = socket.getaddrinfo(parsed.hostname, None)
+        infos = socket.getaddrinfo(host, None)
     except Exception:
+        _safe_host_cache[host] = False
         return False
+    safe = True
     for info in infos:
         try:
             ip_obj = ipaddress.ip_address(info[4][0])
@@ -50,8 +81,67 @@ def is_safe_remote_url(raw_url):
             continue
         if (ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local
                 or ip_obj.is_reserved or ip_obj.is_multicast or ip_obj.is_unspecified):
-            return False
-    return True
+            safe = False
+            break
+    _safe_host_cache[host] = safe
+    return safe
+
+def write_self_healing_launchers(root_dir):
+    """Write the root launchers (.bat/.vbs). They:
+      1) relocate a root python_env into app\\ on a clean start (when it isn't locked),
+      2) find pythonw.exe across EVERY layout clients have in the wild — embeddable
+         (python_env\\pythonw.exe) or venv (python_env\\Scripts\\pythonw.exe), in app\\
+         or in the root — and run app\\backend.py with whichever exists.
+    This is why some machines worked and others didn't: the pythonw path differs."""
+    bat = (
+        "@echo off\n"
+        "if exist \"%~dp0python_env\\\" if not exist \"%~dp0app\\python_env\\\" "
+        "robocopy \"%~dp0python_env\" \"%~dp0app\\python_env\" /E /MOVE /NFL /NDL /NJH /NJS /nc /ns /np >nul 2>&1\n"
+        "set \"PYW=\"\n"
+        "if exist \"%~dp0app\\python_env\\pythonw.exe\" set \"PYW=%~dp0app\\python_env\\pythonw.exe\"\n"
+        "if not defined PYW if exist \"%~dp0app\\python_env\\Scripts\\pythonw.exe\" set \"PYW=%~dp0app\\python_env\\Scripts\\pythonw.exe\"\n"
+        "if not defined PYW if exist \"%~dp0python_env\\pythonw.exe\" set \"PYW=%~dp0python_env\\pythonw.exe\"\n"
+        "if not defined PYW if exist \"%~dp0python_env\\Scripts\\pythonw.exe\" set \"PYW=%~dp0python_env\\Scripts\\pythonw.exe\"\n"
+        "set \"BE=%~dp0app\\backend.py\"\n"
+        "if not exist \"%BE%\" set \"BE=%~dp0backend.py\"\n"
+        "if defined PYW ( start \"\" \"%PYW%\" \"%BE%\" ) else ( start \"\" pythonw \"%BE%\" )\n"
+    )
+    vbs = (
+        'Set WshShell = CreateObject("WScript.Shell")\n'
+        'Set fso = CreateObject("Scripting.FileSystemObject")\n'
+        'q = Chr(34)\n'
+        'sd = fso.GetParentFolderName(WScript.ScriptFullName)\n'
+        'If fso.FolderExists(sd & "\\python_env") And Not fso.FolderExists(sd & "\\app\\python_env") Then\n'
+        '    WshShell.Run "robocopy " & q & sd & "\\python_env" & q & " " & q & sd & "\\app\\python_env" & q & " /E /MOVE /NFL /NDL /NJH /NJS /nc /ns /np", 0, True\n'
+        'End If\n'
+        'pyw = ""\n'
+        'If fso.FileExists(sd & "\\app\\python_env\\pythonw.exe") Then\n'
+        '    pyw = sd & "\\app\\python_env\\pythonw.exe"\n'
+        'ElseIf fso.FileExists(sd & "\\app\\python_env\\Scripts\\pythonw.exe") Then\n'
+        '    pyw = sd & "\\app\\python_env\\Scripts\\pythonw.exe"\n'
+        'ElseIf fso.FileExists(sd & "\\python_env\\pythonw.exe") Then\n'
+        '    pyw = sd & "\\python_env\\pythonw.exe"\n'
+        'ElseIf fso.FileExists(sd & "\\python_env\\Scripts\\pythonw.exe") Then\n'
+        '    pyw = sd & "\\python_env\\Scripts\\pythonw.exe"\n'
+        'End If\n'
+        'be = sd & "\\app\\backend.py"\n'
+        'If Not fso.FileExists(be) Then be = sd & "\\backend.py"\n'
+        'If pyw <> "" Then\n'
+        '    WshShell.Run q & pyw & q & " " & q & be & q, 0, False\n'
+        'Else\n'
+        '    WshShell.Run "pythonw " & q & be & q, 0, False\n'
+        'End If\n'
+    )
+    try:
+        with open(os.path.join(root_dir, "Elamir-Media-Hub.bat"), 'w', encoding='utf-8') as f:
+            f.write(bat)
+    except Exception:
+        pass
+    try:
+        with open(os.path.join(root_dir, "Elamir-Media-Hub.vbs"), 'w', encoding='utf-8') as f:
+            f.write(vbs)
+    except Exception:
+        pass
 
 def check_and_run_migration():
     import subprocess
@@ -109,51 +199,30 @@ def check_and_run_migration():
             except Exception:
                 pass
 
+        # Write the FINAL self-healing launchers (in Python — no fragile echo
+        # escaping). On every clean start they relocate python_env into app\ when
+        # it isn't locked, so the migration always finishes even if moving it right
+        # now fails. They run app\backend.py either way.
+        write_self_healing_launchers(script_dir)
+
         migrate_finish = os.path.join(script_dir, "migrate_finish.bat")
         finish_content = (
             "@echo off\n"
-            f'cd /d "{script_dir}"\n'
             f"taskkill /f /pid {pid} >nul 2>&1\n"
-            "timeout /t 5 /nobreak >nul\n"
-            f'if exist "{script_dir}\\python_env" (\n'
-            f'    move "{script_dir}\\python_env" "{script_dir}\\app\\python_env" >nul 2>&1\n'
-            ")\n"
-            f'if exist "{script_dir}\\python_env" (\n'
-            "    timeout /t 3 /nobreak >nul\n"
-            f'    move "{script_dir}\\python_env" "{script_dir}\\app\\python_env" >nul 2>&1\n'
-            ")\n"
-            f'if exist "{script_dir}\\python_env" (\n'
-            "    timeout /t 3 /nobreak >nul\n"
-            f'    robocopy "{script_dir}\\python_env" "{script_dir}\\app\\python_env" /E /MOVE /NFL /NDL /NJH /NJS /nc /ns /np >nul 2>&1\n'
-            ")\n"
-            f'if exist "{script_dir}\\app\\python_env" (\n'
-            f'    (echo @echo off) > "{script_dir}\\Elamir-Media-Hub.bat"\n'
-            f'    (echo cd /d "%%~dp0app\\python_env") >> "{script_dir}\\Elamir-Media-Hub.bat"\n'
-            f'    (echo start "" ".\\pythonw.exe" "..\\backend.py") >> "{script_dir}\\Elamir-Media-Hub.bat"\n'
-            f'    (echo Set WshShell = CreateObject^("WScript.Shell"^)) > "{script_dir}\\Elamir-Media-Hub.vbs"\n'
-            f'    (echo Set fso = CreateObject^("Scripting.FileSystemObject"^)) >> "{script_dir}\\Elamir-Media-Hub.vbs"\n'
-            f'    (echo scriptDir = fso.GetParentFolderName^(WScript.ScriptFullName^)) >> "{script_dir}\\Elamir-Media-Hub.vbs"\n'
-            f'    (echo WshShell.CurrentDirectory = scriptDir ^& "\\app\\python_env") >> "{script_dir}\\Elamir-Media-Hub.vbs"\n'
-            f'    (echo WshShell.Run ".\\python.exe ..\\backend.py", 0, False) >> "{script_dir}\\Elamir-Media-Hub.vbs"\n'
-            f'    start "" wscript.exe "{script_dir}\\Elamir-Media-Hub.vbs"\n'
-            f'    if exist "{script_dir}\\error_log.txt" move "{script_dir}\\error_log.txt" "{script_dir}\\app\\cache\\error_log.txt" >nul 2>&1\n'
-            f'    for %%f in ("{script_dir}\\.cache_*.dat") do move "%%f" "{script_dir}\\app\\cache\\" >nul 2>&1\n'
-            f'    if exist "{script_dir}\\backend.py" del /f /q "{script_dir}\\backend.py" >nul 2>&1\n'
-            f'    if exist "{script_dir}\\index.html" del /f /q "{script_dir}\\index.html" >nul 2>&1\n'
-            f'    if exist "{script_dir}\\push_to_github.bat" del /f /q "{script_dir}\\push_to_github.bat" >nul 2>&1\n'
-            f'    if exist "{script_dir}\\python_env" rmdir /s /q "{script_dir}\\python_env" >nul 2>&1\n'
-            f'    if exist "{script_dir}\\__pycache__" rmdir /s /q "{script_dir}\\__pycache__" >nul 2>&1\n'
-            ") else (\n"
-            f'    (echo @echo off) > "{script_dir}\\Elamir-Media-Hub.bat"\n'
-            f'    (echo cd /d "%%~dp0python_env") >> "{script_dir}\\Elamir-Media-Hub.bat"\n'
-            f'    (echo start "" ".\\pythonw.exe" "..\\app\\backend.py") >> "{script_dir}\\Elamir-Media-Hub.bat"\n'
-            f'    (echo Set WshShell = CreateObject^("WScript.Shell"^)) > "{script_dir}\\Elamir-Media-Hub.vbs"\n'
-            f'    (echo Set fso = CreateObject^("Scripting.FileSystemObject"^)) >> "{script_dir}\\Elamir-Media-Hub.vbs"\n'
-            f'    (echo scriptDir = fso.GetParentFolderName^(WScript.ScriptFullName^)) >> "{script_dir}\\Elamir-Media-Hub.vbs"\n'
-            f'    (echo WshShell.CurrentDirectory = scriptDir ^& "\\python_env") >> "{script_dir}\\Elamir-Media-Hub.vbs"\n'
-            f'    (echo WshShell.Run ".\\python.exe ..\\app\\backend.py", 0, False) >> "{script_dir}\\Elamir-Media-Hub.vbs"\n'
-            f'    start "" wscript.exe "{script_dir}\\Elamir-Media-Hub.vbs"\n'
-            ")\n"
+            ":waitloop\n"
+            "timeout /t 1 /nobreak >nul\n"
+            f'tasklist /fi "PID eq {pid}" 2>nul | find "{pid}" >nul && goto waitloop\n'
+            "timeout /t 2 /nobreak >nul\n"
+            # python is gone now, so python_env is unlocked — move it into app\
+            f'if exist "{script_dir}\\python_env" if not exist "{script_dir}\\app\\python_env" '
+            f'robocopy "{script_dir}\\python_env" "{script_dir}\\app\\python_env" /E /MOVE /NFL /NDL /NJH /NJS /nc /ns /np >nul 2>&1\n'
+            # remove leftover root files
+            f'if exist "{script_dir}\\backend.py" del /f /q "{script_dir}\\backend.py" >nul 2>&1\n'
+            f'if exist "{script_dir}\\index.html" del /f /q "{script_dir}\\index.html" >nul 2>&1\n'
+            f'if exist "{script_dir}\\push_to_github.bat" del /f /q "{script_dir}\\push_to_github.bat" >nul 2>&1\n'
+            f'if exist "{script_dir}\\__pycache__" rmdir /s /q "{script_dir}\\__pycache__" >nul 2>&1\n'
+            # relaunch through the self-healing VBS (it also relocates python_env if needed)
+            f'start "" wscript.exe "{script_dir}\\Elamir-Media-Hub.vbs"\n'
             "(goto) 2>nul & del \"%~f0\"\n"
         )
         try:
@@ -162,53 +231,40 @@ def check_and_run_migration():
         except Exception:
             pass
 
-        # Write intermediate launchers: root python_env → app/backend.py (safe - python_env still in root)
-        try:
-            with open(os.path.join(script_dir, "Elamir-Media-Hub.bat"), 'w', encoding='utf-8') as f:
-                f.write('@echo off\n')
-                f.write('cd /d "%~dp0python_env"\n')
-                f.write('start "" ".\\pythonw.exe" "..\\app\\backend.py"\n')
-        except Exception:
-            pass
-
-        try:
-            with open(os.path.join(script_dir, "Elamir-Media-Hub.vbs"), 'w', encoding='utf-8') as f:
-                f.write('Set WshShell = CreateObject("WScript.Shell")\n')
-                f.write('Set fso = CreateObject("Scripting.FileSystemObject")\n')
-                f.write('scriptDir = fso.GetParentFolderName(WScript.ScriptFullName)\n')
-                f.write('WshShell.CurrentDirectory = scriptDir & "\\python_env"\n')
-                f.write('WshShell.Run ".\\python.exe ..\\app\\backend.py", 0, False\n')
-        except Exception:
-            pass
-
-        # Launch migrate_finish.bat then exit
         try:
             subprocess.Popen(
                 ["cmd.exe", "/c", migrate_finish],
                 creationflags=0x08000000 if sys.platform == 'win32' else 0,
                 close_fds=True
             )
-            time.sleep(3)
+            time.sleep(2)
             sys.exit(0)
         except Exception:
             pass
 
-    # Clean up any leftover root python_env and __pycache__ on startup if we are in the new layout
+    # Once we're in the new layout, ALWAYS refresh the root launchers to the
+    # universal self-healing version, so every client converges no matter how its
+    # launcher/python_env (embeddable vs venv) ended up. Then tidy leftovers —
+    # but NEVER delete the python_env we're actually running from.
     if not is_dev and os.path.basename(script_dir) == "app":
         parent_dir = os.path.dirname(script_dir)
+        write_self_healing_launchers(parent_dir)
+
         root_pyenv = os.path.join(parent_dir, "python_env")
         root_pycache = os.path.join(parent_dir, "__pycache__")
-        
-        if os.path.exists(root_pyenv):
-            try:
-                shutil.rmtree(root_pyenv, ignore_errors=True)
-            except Exception:
-                pass
+        try:
+            exe_dir = os.path.abspath(os.path.dirname(sys.executable)).lower()
+        except Exception:
+            exe_dir = ""
+        running_from_root = exe_dir.startswith(os.path.abspath(root_pyenv).lower())
+
+        # Only remove a root python_env that's truly orphaned (we're not using it,
+        # and it has been successfully relocated into app\).
+        app_pyenv = os.path.join(script_dir, "python_env")
+        if os.path.exists(root_pyenv) and not running_from_root and os.path.exists(app_pyenv):
+            shutil.rmtree(root_pyenv, ignore_errors=True)
         if os.path.exists(root_pycache):
-            try:
-                shutil.rmtree(root_pycache, ignore_errors=True)
-            except Exception:
-                pass
+            shutil.rmtree(root_pycache, ignore_errors=True)
 
 check_and_run_migration()
 
@@ -256,7 +312,7 @@ def get_cache_dir():
     os.makedirs(cache_dir, exist_ok=True)
     return cache_dir
 
-VERSION = "1.8"
+VERSION = "1.9"
 
 # Global Configurations & Cache
 CONFIG_FILE = os.path.join(get_base_dir(), "config.json")
@@ -914,30 +970,113 @@ def revalidate_cache_in_background(name, action):
 
 # HLS Segment merger and downloader thread with Resume support
 class DownloadThread(threading.Thread):
-    def __init__(self, dl_id, media_type, stream_id, filename, limit_bytes=None):
+    def __init__(self, dl_id, media_type, stream_id, filename, limit_bytes=None, subfolder=""):
         super().__init__()
         self.dl_id = dl_id
         self.media_type = media_type
         self.stream_id = stream_id
         self.filename = sanitize_filename(filename, f"download_{stream_id}")
         self.limit_bytes = limit_bytes
+        self.subfolder = sanitize_subfolder(subfolder)
         self.cancel_requested = False
-        
+
+    def _supports_range(self, url):
+        """True if the server honours HTTP Range (needed for multi-connection)."""
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Range': 'bytes=0-0'})
+            with urllib.request.urlopen(req, timeout=10) as r:
+                return (getattr(r, 'status', r.getcode()) == 206)
+        except Exception:
+            return False
+
+    def _parallel_range_download(self, url, filepath, total_size, num_conns=8):
+        """Download a single file over several connections at once. IPTV providers
+        usually throttle each connection, so N connections ≈ N× the speed and fill
+        the user's real bandwidth."""
+        import concurrent.futures
+        if total_size <= 0 or not self._supports_range(url):
+            return False
+        part = max(1, total_size // num_conns)
+        ranges = []
+        s = 0
+        while s < total_size:
+            e = min(s + part - 1, total_size - 1)
+            ranges.append((s, e))
+            s = e + 1
+        wf = None
+        try:
+            wf = open(filepath, 'wb')
+            wf.truncate(total_size)
+            wf.close()
+            wf = open(filepath, 'r+b')   # single shared handle; writes are seek+locked
+            done = {'b': 0}
+            lock = threading.Lock()
+            start_time = time.time()
+
+            def dl(s, e):
+                req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0', 'Range': f'bytes={s}-{e}'})
+                pos = s
+                with urllib.request.urlopen(req, timeout=20) as r:
+                    while True:
+                        if self.cancel_requested:
+                            raise Exception("Cancelled by user")
+                        chunk = r.read(262144)
+                        if not chunk:
+                            break
+                        with lock:
+                            wf.seek(pos)
+                            wf.write(chunk)
+                            done['b'] += len(chunk)
+                            total_done = done['b']
+                        pos += len(chunk)
+                        el = time.time() - start_time
+                        with downloads_lock:
+                            downloads_db[self.dl_id].update({
+                                "progress": int(total_done * 100 / total_size),
+                                "downloaded_mb": total_done // (1024 * 1024),
+                                "total_size_mb": total_size // (1024 * 1024),
+                                "speed_mb_s": (total_done / (1024 * 1024)) / el if el > 0 else 0
+                            })
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=num_conns) as ex:
+                futs = [ex.submit(dl, a, b) for (a, b) in ranges]
+                for fu in concurrent.futures.as_completed(futs):
+                    fu.result()  # propagate errors / cancellation
+            wf.close(); wf = None
+            return True
+        except Exception as e:
+            try:
+                if wf: wf.close()
+            except Exception:
+                pass
+            if "Cancelled" in str(e):
+                raise
+            print(f"[parallel download] failed, falling back to single connection: {e}")
+            return False
+
     def run(self):
         domain = config["domain"]
         username = config["username"]
         password = config["password"]
         save_dir = config["save_dir"]
-        
+
         if domain == "http://m3u.local":
             url = M3U_STREAMS_MAP.get(self.stream_id, "")
         else:
             url_path = "movie" if self.media_type == "movie" else "series"
             url = f"{domain}/{url_path}/{username}/{password}/{self.stream_id}.m3u8"
-        
-        # Setup file path (append _sample for sample download)
+
+        # Setup file path (append _sample for sample download); season/series
+        # downloads go into their own subfolder.
         filename_ext = f"{self.filename}_sample.ts" if self.limit_bytes else f"{self.filename}.ts"
-        filepath = os.path.join(save_dir, filename_ext)
+        target_dir = os.path.join(save_dir, *self.subfolder.split("/")) if self.subfolder else save_dir
+        try:
+            os.makedirs(target_dir, exist_ok=True)
+        except Exception:
+            target_dir = save_dir
+        filepath = os.path.join(target_dir, filename_ext)
+        # Relative path stored in the library so it can be found/streamed later.
+        self.rel_path = os.path.join(self.subfolder.replace("/", os.sep), filename_ext) if self.subfolder else filename_ext
         
         resume_path = filepath + ".resume"
         # We only support HLS resume for full downloads (not samples)
@@ -1033,8 +1172,8 @@ class DownloadThread(threading.Thread):
                     import concurrent.futures
 
                     write_mode = 'ab' if next_index > 0 else 'wb'
-                    MAX_WORKERS = 20
-                    LOOK_AHEAD = 55
+                    MAX_WORKERS = 30
+                    LOOK_AHEAD = 60
 
                     def download_segment_task(idx, url):
                         if self.cancel_requested:
@@ -1148,18 +1287,25 @@ class DownloadThread(threading.Thread):
                     # ── Direct Binary Download ──
                     content_length = int(response.info().get('Content-Length', 0))
                     total_size = content_length + current_size
-                    
-                    downloaded_bytes = current_size if is_partial else len(first_block)
-                    start_time = time.time()
-                    
-                    effective_total = min(total_size, self.limit_bytes) if (self.limit_bytes and total_size > 0) else total_size
-                    
-                    if effective_total > 0:
+
+                    # Multi-connection accelerator: for a fresh full download of a
+                    # reasonably large file, split it across several connections to
+                    # beat the provider's per-connection speed cap.
+                    if (content_length > 8 * 1024 * 1024 and current_size == 0 and not self.limit_bytes
+                            and self._parallel_range_download(final_url, filepath, content_length)):
+                        downloaded_bytes = content_length
+                    else:
+                      downloaded_bytes = current_size if is_partial else len(first_block)
+                      start_time = time.time()
+
+                      effective_total = min(total_size, self.limit_bytes) if (self.limit_bytes and total_size > 0) else total_size
+
+                      if effective_total > 0:
                         with downloads_lock:
                             downloads_db[self.dl_id]["total_size_mb"] = effective_total // (1024 * 1024)
-                            
-                    write_mode = 'ab' if is_partial else 'wb'
-                    with open(filepath, write_mode) as f:
+
+                      write_mode = 'ab' if is_partial else 'wb'
+                      with open(filepath, write_mode) as f:
                         if not is_partial:
                             f.write(first_block)
                             
@@ -1204,7 +1350,7 @@ class DownloadThread(threading.Thread):
                 })
             try:
                 if os.path.exists(filepath):
-                    add_to_library_config(os.path.basename(filepath), os.path.getsize(filepath))
+                    add_to_library_config(self.rel_path, os.path.getsize(filepath))
             except Exception as le:
                 print(f"Error adding completed download to library: {le}")
         except Exception as e:
@@ -1270,6 +1416,182 @@ def show_native_file_picker():
         "$res = $dialog.ShowDialog($tp)\n"
         "if ($res -eq [System.Windows.Forms.DialogResult]::OK) { $dialog.FileName }\n"
     )
+
+# ── Custom DNS (two modes) ──────────────────────────────────────────────
+#  • System DNS  : changes the whole PC's resolver (needs Admin / UAC).
+#  • App DNS     : resolves the provider's host via DoH using the chosen DNS,
+#                  for this app's traffic only — no Admin, no system changes.
+_DNS_PRESETS = {
+    "cloudflare": ["1.1.1.1", "1.0.0.1"],
+    "google":     ["8.8.8.8", "8.8.4.4"],
+    "adguard":    ["94.140.14.14", "94.140.15.15"],
+    "quad9":      ["9.9.9.9", "149.112.112.112"],
+}
+# DoH endpoints are IP-based so resolving them never needs DNS itself (no loop).
+_DOH_ENDPOINTS = {
+    "cloudflare": "https://1.1.1.1/dns-query",
+    "google":     "https://8.8.8.8/resolve",
+    "adguard":    "https://94.140.14.14/dns-query",
+    "quad9":      "https://9.9.9.9:5053/dns-query",
+}
+_app_dns_provider = None   # None/"off" = disabled; otherwise a preset key
+_doh_cache = {}
+_orig_getaddrinfo = socket.getaddrinfo
+
+def _is_ip_literal(host):
+    try:
+        ipaddress.ip_address(host)
+        return True
+    except ValueError:
+        return False
+
+def _doh_resolve(host):
+    endpoint = _DOH_ENDPOINTS.get(_app_dns_provider)
+    if not endpoint:
+        return None
+    if host in _doh_cache:
+        return _doh_cache[host]
+    try:
+        url = f"{endpoint}?name={urllib.parse.quote(host)}&type=A"
+        req = urllib.request.Request(url, headers={"accept": "application/dns-json", "User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=5) as r:
+            data = json.loads(r.read().decode("utf-8", "ignore"))
+        for ans in data.get("Answer", []):
+            if ans.get("type") == 1 and ans.get("data"):
+                _doh_cache[host] = ans["data"]
+                return ans["data"]
+    except Exception as e:
+        print(f"[DoH] resolve failed for {host}: {e}")
+    return None
+
+def _patched_getaddrinfo(host, *args, **kwargs):
+    # When App DNS is on, resolve real hostnames via DoH and connect to that IP.
+    # The Host header / TLS SNI still use the original hostname, so https works.
+    if _app_dns_provider and host and host != "localhost" and not _is_ip_literal(host):
+        ip = _doh_resolve(host)
+        if ip:
+            try:
+                return _orig_getaddrinfo(ip, *args, **kwargs)
+            except Exception:
+                pass
+    return _orig_getaddrinfo(host, *args, **kwargs)
+
+socket.getaddrinfo = _patched_getaddrinfo
+
+def apply_app_dns_from_config():
+    global _app_dns_provider
+    prov = config.get("dns_app_provider", "off")
+    _app_dns_provider = prov if prov in _DOH_ENDPOINTS else None
+
+def set_app_dns(provider):
+    global _app_dns_provider
+    _doh_cache.clear()
+    _safe_host_cache.clear()
+    _app_dns_provider = provider if provider in _DOH_ENDPOINTS else None
+    config["dns_app_provider"] = _app_dns_provider or "off"
+    save_config()
+    return {"status": "success", "provider": _app_dns_provider or "off"}
+
+def set_system_dns(provider):
+    """Change the whole system's DNS for the active adapter (requires Admin)."""
+    import subprocess, tempfile
+    if provider == "auto":
+        action = "Set-DnsClientServerAddress -InterfaceIndex $ifc -ResetServerAddresses"
+    else:
+        servers = _DNS_PRESETS.get(provider)
+        if not servers:
+            return {"status": "error", "message": "Unknown DNS provider"}
+        action = "Set-DnsClientServerAddress -InterfaceIndex $ifc -ServerAddresses " + ",".join(servers)
+    script = (
+        "$ErrorActionPreference='Stop'\n"
+        "$r = Get-NetRoute -DestinationPrefix '0.0.0.0/0' | Sort-Object RouteMetric | Select-Object -First 1\n"
+        "$ifc = $r.InterfaceIndex\n"
+        + action + "\n"
+        "Clear-DnsClientCache\n"
+    )
+    try:
+        tmp = os.path.join(tempfile.gettempdir(), "emh_setdns.ps1")
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.write(script)
+        elevate = (
+            "try { $p = Start-Process powershell -Verb RunAs -PassThru -Wait "
+            "-ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File','" + tmp + "'; "
+            "exit $p.ExitCode } catch { Write-Error $_.Exception.Message; exit 5 }"
+        )
+        proc = subprocess.run(
+            ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", elevate],
+            capture_output=True, text=True, timeout=120,
+            creationflags=0x08000000 if sys.platform == 'win32' else 0
+        )
+        if proc.returncode == 0:
+            return {"status": "success", "provider": provider}
+        msg = (proc.stderr or "").strip() or "Admin permission was declined."
+        return {"status": "error", "message": msg[:300]}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+def get_current_dns():
+    import subprocess
+    info = {"system": [], "systemProvider": "unknown", "app": (_app_dns_provider or "off")}
+    try:
+        script = (
+            "$r = Get-NetRoute -DestinationPrefix '0.0.0.0/0' | Sort-Object RouteMetric | Select-Object -First 1\n"
+            "(Get-DnsClientServerAddress -InterfaceIndex $r.InterfaceIndex -AddressFamily IPv4).ServerAddresses -join ','\n"
+        )
+        proc = subprocess.run(
+            ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script],
+            capture_output=True, text=True, timeout=15,
+            creationflags=0x08000000 if sys.platform == 'win32' else 0
+        )
+        servers = [x.strip() for x in (proc.stdout or "").strip().split(",") if x.strip()]
+        info["system"] = servers
+        if not servers:
+            info["systemProvider"] = "auto"
+        else:
+            info["systemProvider"] = "custom"
+            for name, ips in _DNS_PRESETS.items():
+                if servers[0] == ips[0]:
+                    info["systemProvider"] = name
+                    break
+    except Exception:
+        pass
+    return info
+
+# ── Upstream proxy / tunnel (route all provider traffic through a proxy so the
+#    ISP only sees an encrypted connection — defeats DPI throttling, RST injection
+#    and IP blocking of the IPTV provider) ─────────────────────────────────────
+_proxy_url = ""
+
+def apply_upstream_proxy():
+    """Install a global opener that sends all provider requests through the proxy."""
+    global _proxy_url
+    _proxy_url = (config.get("proxy_url") or "").strip()
+    if _proxy_url:
+        handler = urllib.request.ProxyHandler({"http": _proxy_url, "https": _proxy_url})
+        opener = urllib.request.build_opener(handler)
+    else:
+        opener = urllib.request.build_opener()  # direct, no proxy
+    urllib.request.install_opener(opener)
+
+def set_upstream_proxy(url):
+    config["proxy_url"] = (url or "").strip()
+    save_config()
+    apply_upstream_proxy()
+    return {"status": "success", "proxy": config["proxy_url"]}
+
+def test_upstream_proxy():
+    """Check the current route and report the exit IP the provider would see."""
+    try:
+        req = urllib.request.Request("https://1.1.1.1/cdn-cgi/trace", headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=10) as r:
+            txt = r.read().decode("utf-8", "ignore")
+        ip = ""
+        for line in txt.splitlines():
+            if line.startswith("ip="):
+                ip = line[3:].strip()
+        return {"status": "success", "ip": ip, "via_proxy": bool(_proxy_url)}
+    except Exception as e:
+        return {"status": "error", "message": str(e)[:200]}
 
 # EPG helpers removed
 
@@ -1380,6 +1702,12 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
                 ch = dict(chans[n - 1])
                 ch["gnum"] = n
             self.send_json({"channel": ch})
+
+        elif path == "/api/dns":
+            self.send_json(get_current_dns())
+
+        elif path == "/api/upstream-proxy":
+            self.send_json({"proxy": config.get("proxy_url", "")})
 
         elif path == "/api/direct-url":
             # Returns the authenticated provider URL for a stream. Used only when
@@ -1560,6 +1888,28 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
                 self.send_json({"status": "success", "locked": app_lock_enabled()})
             except Exception as e:
                 self.send_error(400, f"Error: {e}")
+
+        elif path == "/api/dns":
+            try:
+                data = json.loads(body)
+                scope = data.get("scope", "app")
+                provider = data.get("provider", "auto")
+                if scope == "system":
+                    self.send_json(set_system_dns(provider))     # whole PC (Admin)
+                else:
+                    self.send_json(set_app_dns(provider))        # streaming only (no Admin)
+            except Exception as e:
+                self.send_error(400, f"DNS error: {e}")
+
+        elif path == "/api/upstream-proxy":
+            try:
+                data = json.loads(body)
+                if data.get("action") == "test":
+                    self.send_json(test_upstream_proxy())
+                else:
+                    self.send_json(set_upstream_proxy(data.get("url", "")))
+            except Exception as e:
+                self.send_error(400, f"Proxy error: {e}")
 
         elif path == "/api/creds":
             try:
@@ -1802,7 +2152,57 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
                 self.send_json({"status": "started", "id": dl_id})
             except Exception as e:
                 self.send_error(400, f"Error starting download: {e}")
-                
+
+        elif path == "/api/download-series":
+            # Queue every episode and download them one-by-one (sequentially) so we
+            # don't hammer the provider with dozens of parallel connections.
+            try:
+                data = json.loads(body)
+                episodes = data.get("episodes", [])
+                series_name = sanitize_filename(data.get("series_name", "Series"), "Series")
+                if not episodes:
+                    self.send_error(400, "No episodes provided")
+                    return
+                group_id = f"ser_{int(time.time() * 1000)}"
+                total = len(episodes)
+                t = threading.Thread(daemon=True)
+                t.dl_id = group_id
+                t.cancel_requested = False
+
+                def run_series():
+                    for i, ep in enumerate(episodes):
+                        if t.cancel_requested:
+                            break
+                        with downloads_lock:
+                            downloads_db[group_id] = {
+                                "id": group_id,
+                                "filename": f"{series_name} — episode {i+1}/{total}",
+                                "progress": -1, "downloaded_mb": 0, "total_size_mb": 0,
+                                "speed_mb_s": 0, "status": "downloading"
+                            }
+                        ep_thread = DownloadThread(f"{group_id}_{i}", "series",
+                                                   ep.get("id"),
+                                                   ep.get("filename") or f"{series_name}_{i+1}",
+                                                   subfolder=ep.get("subfolder", ""))
+                        ep_thread.start()
+                        while ep_thread.is_alive():
+                            if t.cancel_requested:
+                                ep_thread.cancel_requested = True
+                            ep_thread.join(timeout=0.5)
+                    with downloads_lock:
+                        if group_id in downloads_db:
+                            downloads_db[group_id].update({
+                                "status": "cancelled" if t.cancel_requested else "completed",
+                                "filename": f"{series_name} — {'cancelled' if t.cancel_requested else 'all episodes done'} ({total})",
+                                "speed_mb_s": 0
+                            })
+
+                t.run = run_series
+                t.start()
+                self.send_json({"status": "started", "id": group_id})
+            except Exception as e:
+                self.send_error(400, f"Series download error: {e}")
+
 
         elif path == "/api/copy":
             try:
@@ -1865,6 +2265,11 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
                     "category_id": data.get("category_id"),
                     "timestamp": int(time.time())
                 }
+                # Series: remember which series + the last episode watched so we can
+                # reopen the right show and resume where the user left off.
+                for opt in ("series_id", "episode_id", "ep_label", "season"):
+                    if data.get(opt) is not None:
+                        new_item[opt] = data.get(opt)
                 recents.insert(0, new_item)
                 
                 # Limit to 50 items
@@ -1905,7 +2310,7 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
                     return
                 
                 save_dir = config.get("save_dir", DEFAULT_SAVE_DIR)
-                file_path = os.path.join(save_dir, os.path.basename(file_name))
+                file_path = os.path.normpath(os.path.join(save_dir, file_name))
 
                 abs_save_dir = os.path.abspath(save_dir)
                 abs_file_path = os.path.abspath(file_path)
@@ -2571,36 +2976,41 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
             self.send_error(400, "Missing type/id (or url) parameter")
             return
 
+        # Step 1: fetch the manifest from the provider
         try:
             if not is_safe_remote_url(stream_url):
                 self.send_error(403, "Blocked: target host is not allowed")
                 return
-            req = urllib.request.Request(stream_url, headers={"User-Agent": "Mozilla/5.0"})
-            with urllib.request.urlopen(req, timeout=15) as resp:
+            with _open_upstream(stream_url, timeout=15) as resp:
                 final_url = resp.geturl()
                 content   = resp.read()
+        except Exception as e:
+            print(f"[Stream Proxy Error] {e}")
+            self._safe_send_error(502, f"Upstream error: {e}")
+            return
 
-            if content.lstrip().startswith(b"#EXTM3U"):
-                text  = content.decode("utf-8", errors="ignore")
-                lines = text.splitlines()
-                out   = []
-                for line in lines:
-                    s = line.strip()
-                    if s and not s.startswith("#"):
-                        seg_url   = urllib.parse.urljoin(final_url, s)
-                        proxy_seg = "/api/proxy?url=" + urllib.parse.quote(seg_url, safe="")
-                        out.append(proxy_seg)
-                    elif s.startswith("#EXT-X-KEY") and 'URI="' in s:
-                        def fix_key(m):
-                            ku = urllib.parse.urljoin(final_url, m.group(1))
-                            return f'URI="/api/proxy?url={urllib.parse.quote(ku, safe="")}"'
-                        out.append(re.sub(r'URI="([^"]+)"', fix_key, s))
-                    else:
-                        out.append(line)
-                new_content = "\n".join(out).encode("utf-8")
-            else:
-                new_content = content
+        # Step 2: rewrite segment/key URLs through our proxy
+        if content.lstrip().startswith(b"#EXTM3U"):
+            out = []
+            for line in content.decode("utf-8", errors="ignore").splitlines():
+                s = line.strip()
+                if s and not s.startswith("#"):
+                    seg_url   = urllib.parse.urljoin(final_url, s)
+                    out.append("/api/proxy?url=" + urllib.parse.quote(seg_url, safe=""))
+                elif s.startswith("#EXT-X-KEY") and 'URI="' in s:
+                    def fix_key(m):
+                        ku = urllib.parse.urljoin(final_url, m.group(1))
+                        return f'URI="/api/proxy?url={urllib.parse.quote(ku, safe="")}"'
+                    out.append(re.sub(r'URI="([^"]+)"', fix_key, s))
+                else:
+                    out.append(line)
+            new_content = "\n".join(out).encode("utf-8")
+        else:
+            new_content = content
 
+        # Step 3: send to the browser. It may have already moved on (seek, quality
+        # switch, closed the player) — that's normal, so ignore disconnects quietly.
+        try:
             self.send_response(200)
             self.send_header("Content-Type", "application/vnd.apple.mpegurl")
             self.send_header("Content-Length", len(new_content))
@@ -2608,25 +3018,69 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
             self.send_header("Cache-Control", "no-cache")
             self.end_headers()
             self.wfile.write(new_content)
-        except Exception as e:
-            print(f"[Stream Proxy Error] {e}")
-            self.send_error(502, f"Upstream error: {e}")
+        except (BrokenPipeError, ConnectionError, OSError):
+            pass
 
     def handle_segment_proxy(self, query):
-        """Pipe raw segment/key bytes from IPTV server to browser."""
+        """Pipe segment/key bytes from the IPTV server to the browser. If the URL
+        turns out to be a nested playlist (variant of a master, for multi-bitrate /
+        quality selection), rewrite its segment URLs through the proxy too."""
+        import re
         raw_url = query.get("url", [None])[0]
         if not raw_url:
             self.send_error(400, "Missing url parameter")
             return
+        url = urllib.parse.unquote(raw_url)
+        if not is_safe_remote_url(url):
+            self.send_error(403, "Blocked: target host is not allowed")
+            return
+
+        # Step 1: open the upstream connection, retrying through ISP interference
         try:
-            url = urllib.parse.unquote(raw_url)
-            if not is_safe_remote_url(url):
-                self.send_error(403, "Blocked: target host is not allowed")
-                return
-            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-            with urllib.request.urlopen(req, timeout=20) as resp:
-                ctype   = resp.headers.get("Content-Type", "video/MP2T")
-                cl      = resp.headers.get("Content-Length", "")
+            resp = _open_upstream(url, timeout=20)
+        except Exception as e:
+            print(f"[Segment Proxy Error] {e}")
+            self._safe_send_error(502, f"Segment proxy error: {e}")
+            return
+
+        # Step 2: stream to the browser. Both the player dropping the request and the
+        # provider resetting the connection mid-segment are normal — handle quietly
+        # so they don't flood the console with tracebacks.
+        try:
+            with resp:
+                ctype     = resp.headers.get("Content-Type", "video/MP2T")
+                final_url = resp.geturl()
+                first     = resp.read(64)
+                is_m3u8 = (first.lstrip().startswith(b"#EXTM3U")
+                           or url.split("?")[0].lower().endswith(".m3u8")
+                           or "mpegurl" in ctype.lower())
+
+                if is_m3u8:
+                    content = first + resp.read()
+                    out = []
+                    for line in content.decode("utf-8", errors="ignore").splitlines():
+                        s = line.strip()
+                        if s and not s.startswith("#"):
+                            seg = urllib.parse.urljoin(final_url, s)
+                            out.append("/api/proxy?url=" + urllib.parse.quote(seg, safe=""))
+                        elif s.startswith("#EXT-X-KEY") and 'URI="' in s:
+                            def fix_key(m):
+                                ku = urllib.parse.urljoin(final_url, m.group(1))
+                                return f'URI="/api/proxy?url={urllib.parse.quote(ku, safe="")}"'
+                            out.append(re.sub(r'URI="([^"]+)"', fix_key, s))
+                        else:
+                            out.append(line)
+                    new_content = "\n".join(out).encode("utf-8")
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/vnd.apple.mpegurl")
+                    self.send_header("Content-Length", len(new_content))
+                    self.send_header("Access-Control-Allow-Origin", "*")
+                    self.send_header("Cache-Control", "no-cache")
+                    self.end_headers()
+                    self.wfile.write(new_content)
+                    return
+
+                cl = resp.headers.get("Content-Length", "")
                 self.send_response(200)
                 self.send_header("Content-Type", ctype)
                 self.send_header("Access-Control-Allow-Origin", "*")
@@ -2634,18 +3088,17 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
                 if cl:
                     self.send_header("Content-Length", cl)
                 self.end_headers()
+                self.wfile.write(first)
                 while True:
                     chunk = resp.read(65536)
                     if not chunk:
                         break
                     self.wfile.write(chunk)
                     self.wfile.flush()
+        except (BrokenPipeError, ConnectionError, OSError):
+            pass  # client moved on or upstream dropped mid-segment — normal
         except Exception as e:
             print(f"[Segment Proxy Error] {e}")
-            try:
-                self.send_error(502, f"Segment proxy error: {e}")
-            except:
-                pass
 
     def handle_get_library(self):
         try:
@@ -2709,7 +3162,8 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
             return
             
         save_dir = config.get("save_dir", DEFAULT_SAVE_DIR)
-        file_path = os.path.join(save_dir, os.path.basename(file_name))
+        # Allow subfolders (season folders) but never escape the save directory.
+        file_path = os.path.normpath(os.path.join(save_dir, file_name))
 
         abs_save_dir = os.path.abspath(save_dir)
         abs_file_path = os.path.abspath(file_path)
@@ -2794,6 +3248,13 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
                 pass
 
     # Helper: Send JSON response
+    def _safe_send_error(self, code, message=""):
+        """send_error that won't crash if the client has already disconnected."""
+        try:
+            self.send_error(code, message)
+        except (BrokenPipeError, ConnectionError, OSError):
+            pass
+
     def send_json(self, data):
         try:
             content = json.dumps(data).encode('utf-8')
@@ -2808,7 +3269,15 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
 
 # Multi-threaded HTTP server class
 class ThreadingHTTPServer(ThreadingMixIn, HTTPServer):
-    pass
+    daemon_threads = True
+
+    def handle_error(self, request, client_address):
+        # A player abandoning a segment (seek / quality switch / close) closes the
+        # socket mid-response. That's normal — don't print a scary traceback for it.
+        exc = sys.exc_info()[1]
+        if isinstance(exc, (BrokenPipeError, ConnectionError, OSError)):
+            return
+        super().handle_error(request, client_address)
 def kill_process_on_port(port):
     import subprocess
     import os
@@ -2858,6 +3327,8 @@ def open_browser():
     webbrowser.open("http://localhost:32100")
 
 def main():
+    apply_app_dns_from_config()  # re-enable App DNS (DoH) if it was set before
+    apply_upstream_proxy()       # re-enable the proxy/tunnel route if configured
     port = 32100
     kill_process_on_port(port)
     server_address = ('', port)

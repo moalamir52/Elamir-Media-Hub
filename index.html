@@ -254,8 +254,8 @@
     .search-input::placeholder { color: var(--text-dim); }
     .cat-select {
       background: var(--bg-card); border: 1px solid var(--border);
-      color: var(--text-main); padding: 0.45rem 0.85rem;
-      border-radius: var(--radius-md); font-family: var(--font); font-size: 0.875rem;
+      color: var(--text-main); padding: 0.4rem 0.7rem;
+      border-radius: var(--radius-md); font-family: var(--font); font-size: 0.8rem;
       outline: none; cursor: pointer; box-shadow: var(--shadow-sm);
     }
     .cat-select:focus { border-color: var(--indigo); }
@@ -264,22 +264,35 @@
     .nav-search-filter {
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      flex-wrap: wrap;
+      gap: 0.4rem;
       flex: 1;
-      max-width: 440px;
-      margin: 0 1rem;
+      max-width: 560px;
+      margin: 0 0.75rem;
+      justify-content: flex-end;
     }
     .nav-search-filter .search-wrap {
-      flex: 1;
+      flex: 1 1 150px;
+      min-width: 120px;
       max-width: none;
-      height: 38px;
-      padding: 0 0.75rem;
+      height: 34px;
+      padding: 0 0.6rem;
       background: var(--bg-input);
     }
+    .nav-search-filter .search-input { font-size: 0.82rem; }
     .nav-search-filter .cat-select {
-      height: 38px;
+      height: 34px;
+      flex: 0 1 auto;
+      min-width: 0;
+      max-width: 160px;
       background: var(--bg-input);
-      padding: 0 0.75rem;
+      padding: 0 0.5rem;
+      text-overflow: ellipsis;
+    }
+    /* "Go to #" stays small — it must not grow like the main search box */
+    .nav-search-filter .chan-goto {
+      flex: 0 0 108px;
+      min-width: 108px;
     }
     @media (max-width: 1024px) {
       .nav-row-2 {
@@ -290,7 +303,13 @@
       .nav-search-filter {
         margin: 0;
         max-width: none;
+        justify-content: stretch;
       }
+    }
+    @media (max-width: 560px) {
+      .nav-search-filter .search-wrap { flex: 1 1 100%; }
+      .nav-search-filter .cat-select { flex: 1 1 calc(50% - 0.2rem); max-width: none; }
+      .nav-search-filter .chan-goto { flex: 1 1 calc(50% - 0.2rem); min-width: 0; }
     }
 
     /* ── Media Grid ── */
@@ -803,6 +822,56 @@
     // the browser never sees the provider password.
     const streamSrc = (type, id) => getApiUrl(`/api/stream?type=${encodeURIComponent(type)}&id=${encodeURIComponent(id)}`);
 
+    // ── i18n: app interface in English / Arabic / French ──
+    const TRANSLATIONS = {
+      en: {
+        movies:'Movies', series:'TV Shows', live:'Live TV', favorites:'Favorites', recent:'Recent',
+        library:'My Library', search:'Global Search', multiview:'Multi-View', settings:'Settings', close:'Close',
+        searchPlaceholder:'Search...', searchGlobalPlaceholder:'Search movies, series, channels...', goto:'Go to #',
+        titleMovies:'🎬 Movies', titleSeries:'📺 TV Shows', titleLive:'📡 Live TV', titleFavorites:'❤️ Favorites',
+        titleLibrary:'📂 My Library', titleSearch:'🔍 Global Search', titleRecent:'🕒 Recent Watch History', titleMultiview:'🖥️ Multi-View',
+        watchNow:'Watch Now', watch:'Watch', addFavorite:'Add Favorite', favorite:'Favorite', download:'Download',
+        downloadFull:'Download Full', recordLive:'Record Live', emptyLibrary:'Your local library is empty.', emptyGeneric:'Nothing found here.',
+        lockPrompt:'Enter the access password to continue', unlock:'Unlock', password:'Password', wrongPassword:'Wrong password ❌',
+        connecting:'Connecting to stream...', reconnecting:'Reconnecting…', unavailable:'Stream Unavailable', tryDownload:'You can try Download instead.',
+        more:'More', mini:'Mini', cast:'Cast / AirPlay', casting:'Casting', connectingCast:'Connecting...', language:'Language',
+        liveLabel:'Live TV', allCategories:'All Categories'
+      },
+      ar: {
+        movies:'أفلام', series:'مسلسلات', live:'البث المباشر', favorites:'المفضلة', recent:'الأخيرة',
+        library:'مكتبتي', search:'بحث شامل', multiview:'متعدد الشاشات', settings:'الإعدادات', close:'إغلاق',
+        searchPlaceholder:'بحث...', searchGlobalPlaceholder:'ابحث عن أفلام، مسلسلات، قنوات...', goto:'انتقل لرقم',
+        titleMovies:'🎬 أفلام', titleSeries:'📺 مسلسلات', titleLive:'📡 البث المباشر', titleFavorites:'❤️ المفضلة',
+        titleLibrary:'📂 مكتبتي', titleSearch:'🔍 بحث شامل', titleRecent:'🕒 سجل المشاهدة', titleMultiview:'🖥️ متعدد الشاشات',
+        watchNow:'شاهد الآن', watch:'شاهد', addFavorite:'أضف للمفضلة', favorite:'مفضّل', download:'تحميل',
+        downloadFull:'تحميل كامل', recordLive:'تسجيل مباشر', emptyLibrary:'مكتبتك المحلية فارغة.', emptyGeneric:'لا يوجد شيء هنا.',
+        lockPrompt:'أدخل كلمة المرور للمتابعة', unlock:'فتح', password:'كلمة المرور', wrongPassword:'كلمة مرور خاطئة ❌',
+        connecting:'جارٍ الاتصال بالبث...', reconnecting:'إعادة الاتصال…', unavailable:'البث غير متاح', tryDownload:'يمكنك التحميل بدلاً من ذلك.',
+        more:'المزيد', mini:'مصغّر', cast:'بث / AirPlay', casting:'يبث', connectingCast:'جارٍ الاتصال...', language:'اللغة',
+        liveLabel:'البث المباشر', allCategories:'كل التصنيفات'
+      },
+      fr: {
+        movies:'Films', series:'Séries TV', live:'TV en direct', favorites:'Favoris', recent:'Récents',
+        library:'Ma Bibliothèque', search:'Recherche globale', multiview:'Multi-écran', settings:'Paramètres', close:'Fermer',
+        searchPlaceholder:'Rechercher...', searchGlobalPlaceholder:'Rechercher films, séries, chaînes...', goto:'Aller au n°',
+        titleMovies:'🎬 Films', titleSeries:'📺 Séries TV', titleLive:'📡 TV en direct', titleFavorites:'❤️ Favoris',
+        titleLibrary:'📂 Ma Bibliothèque', titleSearch:'🔍 Recherche globale', titleRecent:'🕒 Historique', titleMultiview:'🖥️ Multi-écran',
+        watchNow:'Regarder', watch:'Voir', addFavorite:'Ajouter aux favoris', favorite:'Favori', download:'Télécharger',
+        downloadFull:'Télécharger tout', recordLive:'Enregistrer', emptyLibrary:'Votre bibliothèque est vide.', emptyGeneric:'Rien ici.',
+        lockPrompt:'Entrez le mot de passe pour continuer', unlock:'Déverrouiller', password:'Mot de passe', wrongPassword:'Mot de passe incorrect ❌',
+        connecting:'Connexion au flux...', reconnecting:'Reconnexion…', unavailable:'Flux indisponible', tryDownload:'Vous pouvez télécharger à la place.',
+        more:'Plus', mini:'Mini', cast:'Cast / AirPlay', casting:'Diffusion', connectingCast:'Connexion...', language:'Langue',
+        liveLabel:'TV en direct', allCategories:'Toutes les catégories'
+      }
+    };
+    let currentLang = localStorage.getItem('hub_lang') || 'en';
+    const t = (key) => (TRANSLATIONS[currentLang] && TRANSLATIONS[currentLang][key]) || TRANSLATIONS.en[key] || key;
+    const applyLangToDocument = (l) => {
+      document.documentElement.lang = l;
+      document.documentElement.dir = (l === 'ar') ? 'rtl' : 'ltr';
+    };
+    applyLangToDocument(currentLang);
+
     const apiFetch = (path, options = {}) => {
       let url = getApiUrl(path);
       const method = (options.method || 'GET').toUpperCase();
@@ -841,7 +910,7 @@
     // ────────────────────────────────────────────────────────────────
     // VideoPlayer — URL is NEVER shown to user (credentials protected)
     // ────────────────────────────────────────────────────────────────
-    function VideoPlayer({ title, url, streamId, isLive, downloads, onRecord, onCancelRecord, onClose, onNext, onPrev, hasNext, hasPrev, activeTab }) {
+    function VideoPlayer({ title, url, streamId, isLive, downloads, onRecord, onCancelRecord, onClose, onNext, onPrev, hasNext, hasPrev, activeTab, toast, onEnded, onPipChange }) {
       const videoRef = useRef(null);
       const hlsRef   = useRef(null);
       const [status, setStatus] = useState('loading');
@@ -852,9 +921,81 @@
       const [netSpeed, setNetSpeed] = useState(0);               // estimated Mbps
       const retryRef = useRef(0);                                // reconnect attempt counter
       const retryTimerRef = useRef(null);
+      const [levels, setLevels] = useState([]);                  // available quality levels
+      const [selectedLevel, setSelectedLevel] = useState(-1);    // -1 = Auto (ABR)
+      const [showQuality, setShowQuality] = useState(false);
+      const [pipActive, setPipActive] = useState(false);         // playing in Picture-in-Picture
+      // Player extras
+      const [showMore, setShowMore] = useState(false);
+      const [playbackRate, setPlaybackRate] = useState(1);
+      const [videoFit, setVideoFit] = useState('contain');       // contain | cover | fill
+      const [sleepMin, setSleepMin] = useState(0);               // 0 = off
+      const [showShortcuts, setShowShortcuts] = useState(false);
+      const sleepTimerRef = useRef(null);
+
+      // Apply playback speed (resets to 1× on each new stream)
+      useEffect(() => {
+        const v = videoRef.current;
+        if (v) v.playbackRate = playbackRate;
+      }, [playbackRate, status]);
+
+      // Sleep timer — pause playback after the chosen number of minutes
+      useEffect(() => {
+        if (sleepTimerRef.current) { clearTimeout(sleepTimerRef.current); sleepTimerRef.current = null; }
+        if (sleepMin > 0) {
+          sleepTimerRef.current = setTimeout(() => {
+            const v = videoRef.current;
+            if (v) v.pause();
+            if (toast) toast('😴 Sleep timer — playback paused', 'info');
+            setSleepMin(0);
+          }, sleepMin * 60000);
+        }
+        return () => { if (sleepTimerRef.current) clearTimeout(sleepTimerRef.current); };
+      }, [sleepMin]);
 
       // Chromecast/AirPlay states & functions
       const [castState, setCastState] = useState('disconnected'); // 'disconnected', 'connecting', 'connected'
+
+      const enterPiP = async () => {
+        const v = videoRef.current;
+        if (!v) return;
+        try {
+          if (document.pictureInPictureElement) await document.exitPictureInPicture();
+          else await v.requestPictureInPicture();
+        } catch (e) { toast('Picture-in-Picture is not available for this stream', 'info'); }
+      };
+
+      // Track PiP so the app can hide this overlay (to let the user browse) and
+      // prompt before replacing what's playing.
+      useEffect(() => {
+        const v = videoRef.current;
+        if (!v) return;
+        const onEnter = () => { setPipActive(true); if (onPipChange) onPipChange(true); };
+        const onLeave = () => { setPipActive(false); if (onPipChange) onPipChange(false); };
+        v.addEventListener('enterpictureinpicture', onEnter);
+        v.addEventListener('leavepictureinpicture', onLeave);
+        return () => {
+          v.removeEventListener('enterpictureinpicture', onEnter);
+          v.removeEventListener('leavepictureinpicture', onLeave);
+          if (onPipChange) onPipChange(false); // reset when the player closes
+        };
+      }, []);
+
+      const pickQuality = (idx) => {
+        const hls = hlsRef.current;
+        if (hls) hls.currentLevel = idx; // -1 = auto ABR
+        setSelectedLevel(idx);
+        setShowQuality(false);
+      };
+
+      const jumpToLive = () => {
+        const hls = hlsRef.current;
+        const v = videoRef.current;
+        if (!v) return;
+        if (hls && hls.liveSyncPosition != null) v.currentTime = hls.liveSyncPosition;
+        else if (v.seekable && v.seekable.length) v.currentTime = v.seekable.end(v.seekable.length - 1);
+        v.play().catch(()=>{});
+      };
 
       const handleCast = async () => {
         const video = videoRef.current;
@@ -889,9 +1030,14 @@
             toast('Casting "' + title + '"', 'success');
             return;
           } catch (err) {
-            if (err === 'cancel' || (err && err.code === 'cancel')) return; // picker closed
+            const code = (typeof err === 'string') ? err : (err && (err.code || err.description || err.message)) || '';
+            if (code === 'cancel') return; // user closed the picker
             console.warn('Cast error', err);
-            toast('Could not cast: ' + ((err && (err.description || err.code || err.message)) || 'unknown error'), 'error');
+            if (code === 'session_error' || code === 'receiver_unavailable' || code === 'timeout') {
+              toast('No Chromecast device found on this Wi-Fi. Make sure your Chromecast / Google TV is on and on the same network.', 'error');
+            } else {
+              toast('Could not cast: ' + (code || 'unknown error'), 'error');
+            }
             return;
           }
         }
@@ -1001,17 +1147,18 @@
         };
 
         if (typeof Hls !== 'undefined' && Hls.isSupported()) {
-          // Live tuning: keep close to the live edge to minimise delay (sports);
-          // VOD uses default buffering for smoother seeking.
+          // A healthy buffer keeps playback smooth (fewer cuts). The "🔴 LIVE"
+          // button lets the user jump back to the edge when they want low delay.
           const hls = new Hls(isLive ? {
             enableWorker: true,
-            lowLatencyMode: true,
-            liveSyncDurationCount: 3,
-            liveMaxLatencyDurationCount: 8,
+            lowLatencyMode: false,
+            liveSyncDurationCount: 4,
+            maxBufferLength: 30,
+            maxMaxBufferLength: 90,
             backBufferLength: 30
           } : {
             enableWorker: true,
-            lowLatencyMode: false
+            maxBufferLength: 30
           });
           hlsRef.current = hls;
           hls.loadSource(url);
@@ -1020,19 +1167,25 @@
             retryRef.current = 0;
             setReconnecting(false);
             setStatus('playing');
+            setLevels(hls.levels || []);
+            setSelectedLevel(-1);
             video.play().catch(()=>{});
+          });
+          // Once data is flowing again, clear the "Reconnecting" state and reset the
+          // failure counter (so only *consecutive* failures count toward giving up).
+          hls.on(Hls.Events.FRAG_BUFFERED, () => {
+            retryRef.current = 0;
+            setReconnecting(false);
           });
           hls.on(Hls.Events.ERROR, (_, data) => {
             if (!data.fatal) return;
-            // Smart reconnect: try to recover from network/media errors with backoff
-            // before giving up, instead of failing on the first glitch.
-            if (retryRef.current < 6) {
+            if (retryRef.current < 8) {
               retryRef.current += 1;
               setReconnecting(true);
-              const delay = Math.min(1000 * retryRef.current, 5000);
               if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
                 try { hls.recoverMediaError(); return; } catch(e) {}
               }
+              const delay = Math.min(800 * retryRef.current, 4000);
               retryTimerRef.current = setTimeout(() => {
                 try { hls.startLoad(); } catch(e) {
                   try { hls.destroy(); } catch(e2){}
@@ -1138,7 +1291,7 @@
         }
       };
 
-      return h('div', { className: 'player-backdrop', onMouseMove: handleMouseMove, onMouseLeave: handleMouseLeave },
+      return h('div', { className: 'player-backdrop', onMouseMove: handleMouseMove, onMouseLeave: handleMouseLeave, style: { display: pipActive ? 'none' : 'flex' } },
         h('div', { className: 'player-header' },
           h('div', { className: 'player-title' }, '▶ ' + title),
           h('div', { style: { display: 'flex', gap: '0.5rem', alignItems: 'center' } },
@@ -1151,6 +1304,91 @@
                 borderRadius: '999px', padding: '0.25rem 0.6rem'
               }
             }, '📶 ' + (netSpeed >= 1 ? netSpeed.toFixed(1) + ' Mbps' : (netSpeed * 1000).toFixed(0) + ' Kbps')),
+            isLive && status === 'playing' && h('button', {
+              className: 'btn btn-ghost btn-sm',
+              style: { color:'#fff', background:'rgba(255,71,87,0.22)', border:'1px solid rgba(255,71,87,0.5)', display:'flex', alignItems:'center', gap:'0.3rem' },
+              onClick: jumpToLive,
+              title: 'Jump to the live edge (lowest delay)'
+            }, h('div',{className:'live-dot'}), 'LIVE'),
+            levels.length > 1 && h('div', { style: { position:'relative' } },
+              h('button', {
+                className: 'btn btn-ghost btn-sm',
+                style: { color:'#fff', background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.2)' },
+                onClick: () => setShowQuality(s => !s),
+                title: 'Video quality'
+              }, '⚙ ' + (selectedLevel === -1 ? 'Auto' : (levels[selectedLevel] && levels[selectedLevel].height ? levels[selectedLevel].height + 'p' : 'Q'))),
+              showQuality && h('div', {
+                style: {
+                  position:'absolute', top:'110%', right:0, zIndex:30,
+                  background:'rgba(20,24,33,0.98)', border:'1px solid rgba(255,255,255,0.15)',
+                  borderRadius:'var(--radius-md)', padding:'0.3rem', minWidth:'130px',
+                  boxShadow:'0 8px 24px rgba(0,0,0,0.5)', display:'flex', flexDirection:'column', gap:'0.15rem'
+                }
+              },
+                h('button', {
+                  className:'btn btn-sm', style:{justifyContent:'flex-start', color:'#fff', background: selectedLevel===-1?'rgba(99,102,241,0.4)':'transparent', border:'none'},
+                  onClick:()=>pickQuality(-1)
+                }, 'Auto'),
+                levels.map((lv, i) => h('button', {
+                  key:i, className:'btn btn-sm',
+                  style:{justifyContent:'flex-start', color:'#fff', background: selectedLevel===i?'rgba(99,102,241,0.4)':'transparent', border:'none'},
+                  onClick:()=>pickQuality(i)
+                }, (lv.height ? lv.height + 'p' : Math.round((lv.bitrate||0)/1000) + 'k')))
+              )
+            ),
+            h('div', { style: { position:'relative' } },
+              h('button', {
+                className: 'btn btn-ghost btn-sm',
+                style: { color:'#fff', background: (playbackRate!==1||videoFit!=='contain'||sleepMin>0) ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.2)' },
+                onClick: () => setShowMore(s => !s),
+                title: t('more')
+              }, '⋯ ' + t('more')),
+              showMore && h('div', {
+                style: {
+                  position:'absolute', top:'110%', right:0, zIndex:30,
+                  background:'rgba(20,24,33,0.98)', border:'1px solid rgba(255,255,255,0.15)',
+                  borderRadius:'var(--radius-md)', padding:'0.6rem', minWidth:'220px',
+                  boxShadow:'0 8px 24px rgba(0,0,0,0.5)', display:'flex', flexDirection:'column', gap:'0.6rem',
+                  maxHeight:'72vh', overflowY:'auto'
+                }
+              },
+                !isLive && h('div', null,
+                  h('div', { style:{color:'rgba(255,255,255,0.5)',fontSize:'0.68rem',fontWeight:700,marginBottom:'0.3rem',letterSpacing:'0.05em'} }, '⏩ PLAYBACK SPEED'),
+                  h('div', { style:{display:'flex',flexWrap:'wrap',gap:'0.25rem'} },
+                    [0.5,0.75,1,1.25,1.5,1.75,2].map(r => h('button', {
+                      key:r, className:'btn btn-sm',
+                      style:{padding:'0.2rem 0.45rem',color:'#fff',border:'none',background: playbackRate===r?'rgba(99,102,241,0.6)':'rgba(255,255,255,0.08)'},
+                      onClick:()=>setPlaybackRate(r)
+                    }, r+'×'))
+                  )
+                ),
+                h('div', null,
+                  h('div', { style:{color:'rgba(255,255,255,0.5)',fontSize:'0.68rem',fontWeight:700,marginBottom:'0.3rem',letterSpacing:'0.05em'} }, '🖼️ SCREEN FIT'),
+                  h('div', { style:{display:'flex',gap:'0.25rem'} },
+                    [['contain','Fit'],['cover','Fill'],['fill','Stretch']].map(o => h('button', {
+                      key:o[0], className:'btn btn-sm',
+                      style:{flex:1,padding:'0.25rem',color:'#fff',border:'none',background: videoFit===o[0]?'rgba(99,102,241,0.6)':'rgba(255,255,255,0.08)'},
+                      onClick:()=>setVideoFit(o[0])
+                    }, o[1]))
+                  )
+                ),
+                h('div', null,
+                  h('div', { style:{color:'rgba(255,255,255,0.5)',fontSize:'0.68rem',fontWeight:700,marginBottom:'0.3rem',letterSpacing:'0.05em'} }, '😴 SLEEP TIMER'),
+                  h('div', { style:{display:'flex',flexWrap:'wrap',gap:'0.25rem'} },
+                    [[0,'Off'],[15,'15m'],[30,'30m'],[45,'45m'],[60,'60m'],[90,'90m']].map(o => h('button', {
+                      key:o[0], className:'btn btn-sm',
+                      style:{padding:'0.2rem 0.45rem',color:'#fff',border:'none',background: sleepMin===o[0]?'rgba(99,102,241,0.6)':'rgba(255,255,255,0.08)'},
+                      onClick:()=>setSleepMin(o[0])
+                    }, o[1]))
+                  )
+                ),
+                h('button', {
+                  className:'btn btn-sm',
+                  style:{color:'#fff',background:'rgba(255,255,255,0.08)',border:'none',justifyContent:'flex-start'},
+                  onClick:()=>{ setShowShortcuts(true); setShowMore(false); }
+                }, '⌨️ Keyboard Shortcuts')
+              )
+            ),
             h('button', {
               className: 'btn btn-ghost btn-sm',
               style: {
@@ -1171,15 +1409,16 @@
               onClick: handleCast,
               title: 'Cast to Chromecast or AirPlay device'
             }, 
-              castState === 'connected' ? '🟢 Casting' : castState === 'connecting' ? '⏳ Connecting...' : '📺 Cast / AirPlay'
+              castState === 'connected' ? '🟢 ' + t('casting') : castState === 'connecting' ? '⏳ ' + t('connectingCast') : '📺 ' + t('cast')
             ),
-            h('button', { className: 'btn btn-ghost btn-sm', style:{color:'#fff',background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.2)'}, onClick: onClose }, '✕ Close')
+            h('button', { className: 'btn btn-ghost btn-sm', style:{color:'#fff',background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.2)'}, onClick: enterPiP, title: 'Picture-in-Picture' }, '🗗 ' + t('mini')),
+            h('button', { className: 'btn btn-ghost btn-sm', style:{color:'#fff',background:'rgba(255,255,255,0.12)',border:'1px solid rgba(255,255,255,0.2)'}, onClick: onClose }, '✕ ' + t('close'))
           )
         ),
         h('div', { className: 'player-video-wrap', style: { position: 'relative', width: '100%', height: '100%' } },
           status === 'loading' && h('div', { className: 'player-loading' },
             h('div', { className: 'spinner', style:{borderTopColor:'white'} }),
-            h('span', null, 'Connecting to stream...')
+            h('span', null, t('connecting'))
           ),
           reconnecting && status !== 'error' && h('div', {
             style: {
@@ -1190,21 +1429,41 @@
             }
           },
             h('div', { className: 'spinner', style:{ width:'16px', height:'16px', borderTopColor:'white' } }),
-            'Reconnecting…'
+            t('reconnecting')
           ),
           status === 'error' && h('div', { className: 'player-error' },
             h('span', { style:{fontSize:'2.5rem'} }, '⚠️'),
-            h('p', { style:{fontWeight:700,color:'#fff'} }, 'Stream Unavailable'),
+            h('p', { style:{fontWeight:700,color:'#fff'} }, t('unavailable')),
             h('p', { style:{fontSize:'0.85rem',color:'rgba(255,255,255,0.5)',maxWidth:'360px'} }, errMsg),
-            h('p', { style:{fontSize:'0.78rem',color:'rgba(255,255,255,0.35)',marginTop:'0.5rem'} }, 'You can try Download instead.')
+            h('p', { style:{fontSize:'0.78rem',color:'rgba(255,255,255,0.35)',marginTop:'0.5rem'} }, t('tryDownload'))
           ),
           h('video', {
             ref: videoRef, className: 'player-video', controls: true,
-            style: { display: status === 'error' ? 'none' : 'block' },
+            style: { display: status === 'error' ? 'none' : 'block', objectFit: videoFit },
             onTimeUpdate: handleTimeUpdate,
+            onPlaying: () => { retryRef.current = 0; setReconnecting(false); },
+            onEnded: () => { if (!isLive && onEnded) onEnded(); },
             'x-webkit-airplay': 'allow',
             'airplay': 'allow'
           }),
+          showShortcuts && h('div', {
+            onClick: () => setShowShortcuts(false),
+            style: { position:'absolute', inset:0, zIndex:40, background:'rgba(0,0,0,0.82)', display:'flex', alignItems:'center', justifyContent:'center', padding:'1rem' }
+          },
+            h('div', { onClick: e=>e.stopPropagation(), style:{ background:'rgba(20,24,33,0.98)', border:'1px solid rgba(255,255,255,0.15)', borderRadius:'var(--radius-lg)', padding:'1.5rem', width:'min(360px,92%)', color:'#fff' } },
+              h('h3', { style:{margin:'0 0 1rem',fontSize:'1rem'} }, '⌨️ Keyboard Shortcuts'),
+              [
+                ['Space', 'Play / Pause'],
+                ['← / →', isLive ? 'Previous / Next channel' : 'Seek −10s / +10s'],
+                ['↑ / ↓', 'Volume up / down'],
+                ['Esc', 'Close player']
+              ].map((row,i) => h('div', { key:i, style:{display:'flex',justifyContent:'space-between',alignItems:'center',gap:'1rem',padding:'0.45rem 0',borderBottom:'1px solid rgba(255,255,255,0.08)'} },
+                h('kbd', { style:{background:'rgba(255,255,255,0.12)',padding:'0.15rem 0.5rem',borderRadius:'4px',fontFamily:'monospace',fontSize:'0.8rem'} }, row[0]),
+                h('span', { style:{color:'rgba(255,255,255,0.8)',fontSize:'0.85rem'} }, row[1])
+              )),
+              h('button', { className:'btn btn-indigo', style:{width:'100%',marginTop:'1rem'}, onClick:()=>setShowShortcuts(false) }, 'Got it')
+            )
+          ),
           showArrows && hasPrev && onPrev && h('button', {
             className: 'player-nav-arrow player-nav-prev',
             onClick: (e) => { e.stopPropagation(); onPrev(); },
@@ -1368,22 +1627,35 @@
     }
 
     // ── Series Modal ──
-    function SeriesModal({ item, creds, catName, isFav, onToggleFav, onClose, onDownload, onCopyLink, onWatch, onSelectCategory }) {
+    function SeriesModal({ item, creds, catName, isFav, onToggleFav, onClose, onDownload, onDownloadSeries, onCopyLink, onWatch, onSelectCategory }) {
       const [seasons, setSeasons]   = useState([]);
       const [activeSeason, setAS]   = useState('');
       const [episodes, setEpisodes] = useState([]);
       const [allEps, setAllEps]     = useState({});
       const [loading, setLoading]   = useState(true);
 
+      // Each season downloads into its own subfolder: "Series Name/Season X"
+      const seasonEpisodes = (s) => (allEps[s] || []).map(ep => {
+        const code = `S${String(s).padStart(2,'0')}E${String(ep.episode_num||ep.id||0).padStart(2,'0')}`;
+        return { id: ep.id, filename: `${item.name} - ${code}`, subfolder: `${item.name}/Season ${s}` };
+      });
+      const buildAllEpisodes = () => seasons.reduce((list, s) => list.concat(seasonEpisodes(s)), []);
+      const totalEpisodes = seasons.reduce((n, s) => n + ((allEps[s]||[]).length), 0);
+
       useEffect(() => {
-        apiFetch(`/api/series-info?id=${item.series_id}`)
+        const sid = item.series_id || item.id;  // Recent items store the id as "id"
+        apiFetch(`/api/series-info?id=${encodeURIComponent(sid)}`)
           .then(r => r.json())
           .then(data => {
             const s = Object.keys(data.episodes || {});
             setAllEps(data.episodes || {}); setSeasons(s);
-            if (s.length) { setAS(s[0]); setEpisodes(data.episodes[s[0]] || []); }
+            if (s.length) {
+              // Reopen on the last-watched season when coming from Recent
+              const start = (item.season != null && s.includes(String(item.season))) ? String(item.season) : s[0];
+              setAS(start); setEpisodes(data.episodes[start] || []);
+            }
           }).catch(()=>{}).finally(()=>setLoading(false));
-      }, [item.series_id]);
+      }, [item.series_id, item.id]);
 
       useEffect(() => {
         const fn = e => { if (e.key==='Escape') onClose(); };
@@ -1409,7 +1681,7 @@
                     className: `btn btn-sm ${isFav ? 'btn-red' : 'btn-ghost'}`,
                     style: { padding: '0.15rem 0.5rem', fontSize: '0.75rem', color: isFav ? '#ff4757' : '#fff', borderColor: isFav ? '#ff4757' : 'rgba(255,255,255,0.4)', background: 'rgba(0,0,0,0.4)' },
                     onClick: onToggleFav
-                  }, isFav ? '❤️ Favorite' : '🤍 Add Favorite')
+                  }, isFav ? '❤️ ' + t('favorite') : '🤍 ' + t('addFavorite'))
                 ),
                 h('h2', {className:'modal-title'}, item.name),
                 catName && h('div', {
@@ -1424,6 +1696,23 @@
             loading
               ? h('div', {style:{display:'flex',justifyContent:'center',padding:'2rem'}}, h('div',{className:'spinner'}))
               : h('div', null,
+                  totalEpisodes > 0 && h('div', {style:{display:'flex',gap:'0.5rem',justifyContent:'flex-end',flexWrap:'wrap',marginBottom:'0.75rem'}},
+                    activeSeason && (allEps[activeSeason]||[]).length > 0 && h('button', {
+                      className:'btn btn-ghost btn-sm',
+                      onClick:()=>onDownloadSeries(`${item.name} - Season ${activeSeason}`, seasonEpisodes(activeSeason)),
+                      title:`Download all of Season ${activeSeason} into its own folder`
+                    }, `⬇ Download Season ${activeSeason} (${(allEps[activeSeason]||[]).length})`),
+                    seasons.length > 1 && h('button', {
+                      className:'btn btn-gold btn-sm',
+                      onClick:()=>onDownloadSeries(item.name, buildAllEpisodes()),
+                      title:'Queue every episode of every season (each season in its own folder)'
+                    }, `⬇ Full Series (${totalEpisodes} eps, ${seasons.length} seasons)`),
+                    seasons.length === 1 && h('button', {
+                      className:'btn btn-gold btn-sm',
+                      onClick:()=>onDownloadSeries(item.name, buildAllEpisodes()),
+                      title:'Queue every episode for download'
+                    }, `⬇ Download All (${totalEpisodes} eps)`)
+                  ),
                   seasons.length > 0 && h('div', {className:'seasons-tabs'},
                     seasons.map(s => h('button', {key:s, className:`season-btn ${activeSeason===s?'active':''}`, onClick:()=>{setAS(s);setEpisodes(allEps[s]||[]);}}, `Season ${s}`))
                   ),
@@ -1483,14 +1772,14 @@
           ),
           h('div', {className:'modal-body'},
             h('div', {className:'action-row'},
-              h('button', {className:'btn btn-cyan', onClick:()=>onWatch(item.name, streamUrl, item.stream_id, type === 'live')}, '▶ Watch Now'),
+              h('button', {className:'btn btn-cyan', onClick:()=>onWatch(item.name, streamUrl, item.stream_id, type === 'live')}, '▶ ' + t('watchNow')),
               h('button', {
                 className: `btn ${isFav ? 'btn-red' : 'btn-ghost'}`,
                 style: { color: isFav ? '#ff4757' : '', borderColor: isFav ? '#ff4757' : '' },
                 onClick: onToggleFav
-              }, isFav ? '❤️ Favorite' : '🤍 Add Favorite'),
-              type==='movie' && h('button', {className:'btn btn-gold', onClick:()=>{onDownload('movie',item.stream_id,item.name,null);onClose();}}, '⬇ Download Full'),
-              type==='live' && h('button', {className:'btn btn-gold', onClick:()=>{onRecord(item.stream_id,item.name);onClose();}}, '⏺ Record Live')
+              }, isFav ? '❤️ ' + t('favorite') : '🤍 ' + t('addFavorite')),
+              type==='movie' && h('button', {className:'btn btn-gold', onClick:()=>{onDownload('movie',item.stream_id,item.name,null);onClose();}}, '⬇ ' + t('downloadFull')),
+              type==='live' && h('button', {className:'btn btn-gold', onClick:()=>{onRecord(item.stream_id,item.name);onClose();}}, '⏺ ' + t('recordLive'))
             ),
             catName && h('div', {style:{display:'flex',gap:'0.5rem',flexWrap:'wrap'}},
               h('span', {
@@ -1612,7 +1901,7 @@
           }, isFav ? '❤️' : '🤍'),
           h('div', {className:'card-overlay'},
             h('div', {className:'overlay-actions'},
-              h('span', {className:'btn btn-cyan btn-sm', style:{pointerEvents:'none'}}, '▶ Watch'),
+              h('span', {className:'btn btn-cyan btn-sm', style:{pointerEvents:'none'}}, '▶ ' + t('watch')),
               type !== 'series' && h('span', {className:'btn btn-gold btn-sm', style:{pointerEvents:'none'}}, '⬇')
             )
           ),
@@ -1662,13 +1951,19 @@
       const [isMuted, setIsMuted] = useState(true);
       const [volume, setVolume] = useState(1);
       const [status, setStatus] = useState('loading');
+      const retryRef = useRef(0);
+      const retryTimerRef = useRef(null);
 
-      const streamUrl = streamSrc('live', channel.stream_id);
+      // Slots from the channel picker carry stream_id (live); slots created from the
+      // PiP "Switch to Multi-View" flow carry a ready-made url (any content type).
+      const streamUrl = channel.url || streamSrc('live', channel.stream_id);
 
       useEffect(() => {
         const video = videoRef.current;
         if (!video) return;
+        retryRef.current = 0;
         const cleanup = () => {
+          if (retryTimerRef.current) { clearTimeout(retryTimerRef.current); retryTimerRef.current = null; }
           if (hlsRef.current) {
             hlsRef.current.destroy();
             hlsRef.current = null;
@@ -1681,11 +1976,24 @@
           hls.loadSource(streamUrl);
           hls.attachMedia(video);
           hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            retryRef.current = 0;
             setStatus('playing');
             video.play().catch(()=>{});
           });
           hls.on(Hls.Events.ERROR, (_, data) => {
-            if (data.fatal) {
+            if (!data.fatal) return;
+            // A second stream can fail to start while the first connection is still
+            // being released — retry with backoff before giving up.
+            if (retryRef.current < 6) {
+              retryRef.current += 1;
+              setStatus('loading');
+              if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+                try { hls.recoverMediaError(); return; } catch(e) {}
+              }
+              retryTimerRef.current = setTimeout(() => {
+                try { hls.startLoad(); } catch(e) {}
+              }, Math.min(1500 * retryRef.current, 6000));
+            } else {
               setStatus('error');
             }
           });
@@ -1975,12 +2283,74 @@
       // Channel-number entry (Live TV)
       const [chanNum, setChanNum] = useState('');
 
+      // DNS settings
+      const [dnsInfo, setDnsInfo] = useState(null);
+      const [dnsBusy, setDnsBusy] = useState(false);
+      const fetchDns = async () => {
+        try { const r = await apiFetch('/api/dns'); if (r.ok) setDnsInfo(await r.json()); } catch(e) {}
+      };
+      const setDns = async (scope, provider) => {
+        setDnsBusy(true);
+        toast(scope === 'system' ? 'Changing system DNS — accept the Admin prompt...' : 'Applying DNS for streaming...', 'info');
+        try {
+          const r = await apiFetch('/api/dns', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({scope, provider})});
+          const d = await r.json();
+          if (r.ok && d.status === 'success') toast('DNS updated ✓','success');
+          else toast(d.message || 'DNS change failed','error');
+        } catch(e) { toast('Connection error','error'); }
+        setDnsBusy(false);
+        fetchDns();
+      };
+
+      // Upstream proxy / tunnel (bypass ISP throttling/RST/IP-blocking)
+      const [proxyUrl, setProxyUrl] = useState('');
+      const [proxyBusy, setProxyBusy] = useState(false);
+      const fetchProxy = async () => {
+        try { const r = await apiFetch('/api/upstream-proxy'); if (r.ok) { const d = await r.json(); setProxyUrl(d.proxy || ''); } } catch(e) {}
+      };
+      const saveProxy = async (url) => {
+        setProxyBusy(true);
+        try {
+          const r = await apiFetch('/api/upstream-proxy', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'set', url})});
+          const d = await r.json();
+          if (r.ok && d.status === 'success') toast(url ? 'Proxy enabled ✓' : 'Proxy disabled','success');
+          else toast('Failed to set proxy','error');
+        } catch(e) { toast('Connection error','error'); }
+        setProxyBusy(false);
+      };
+      const testProxy = async () => {
+        setProxyBusy(true);
+        toast('Testing route...', 'info');
+        try {
+          const r = await apiFetch('/api/upstream-proxy', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'test'})});
+          const d = await r.json();
+          if (r.ok && d.status === 'success') toast(`Exit IP: ${d.ip || '?'} ${d.via_proxy ? '(via proxy ✓)' : '(direct)'}`,'success');
+          else toast('Route test failed: ' + (d.message || ''),'error');
+        } catch(e) { toast('Connection error','error'); }
+        setProxyBusy(false);
+      };
+
+      // Picture-in-Picture: when a video plays in PiP, prompt before replacing it
+      const [pipActive, setPipActive] = useState(false);
+      const [pendingPlay, setPendingPlay] = useState(null);
+
+      // Interface language (en / ar / fr)
+      const [lang, setLangState] = useState(currentLang);
+      const setLang = (l) => {
+        currentLang = l;
+        localStorage.setItem('hub_lang', l);
+        applyLangToDocument(l);
+        setLangState(l);
+      };
+
       // Theme (light / dark night mode)
       const [theme, setTheme] = useState(() => localStorage.getItem('hub_theme') || 'light');
       useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
         localStorage.setItem('hub_theme', theme);
       }, [theme]);
+
+      useEffect(() => { if (showSettings) { fetchDns(); fetchProxy(); } }, [showSettings]);
 
       const checkAuth = async () => {
         try {
@@ -1997,7 +2367,7 @@
         try {
           const r = await apiFetch('/api/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({password:loginPw})});
           if (r.ok) { setLoginPw(''); window.location.reload(); }
-          else setLoginErr('Wrong password ❌');
+          else setLoginErr(t('wrongPassword'));
         } catch(e) { setLoginErr('Connection error'); }
       };
 
@@ -2047,6 +2417,7 @@
       const LIMIT = 24;
 
       const pendingCategoryFilterRef = useRef(null);
+      const fetchSeqRef = useRef(0);  // ignore results from superseded fetches
 
       const handleSelectCategory = useCallback((categoryId, categoryType) => {
         let tab = 'movies';
@@ -2092,16 +2463,25 @@
         const targetType = playConfig.type;
         if (targetItem && targetType && targetType !== 'library') {
           const streamId = playConfig.streamId;
+          const isSeries = targetType === 'series';
+          const body = {
+            type: targetType,
+            // Series → one Recent entry per show (dedup by series_id), not per episode
+            id: isSeries ? (targetItem.series_id || streamId) : streamId,
+            name: targetItem.name,
+            stream_icon: targetItem.stream_icon,
+            category_id: targetItem.category_id
+          };
+          if (isSeries) {
+            body.series_id = targetItem.series_id;
+            body.episode_id = streamId;
+            body.ep_label = playConfig.title;
+            if (playConfig.season != null) body.season = playConfig.season;
+          }
           apiFetch('/api/recents', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              type: targetType,
-              id: streamId,
-              name: targetItem.name,
-              stream_icon: targetItem.stream_icon,
-              category_id: targetItem.category_id
-            })
+            body: JSON.stringify(body)
           }).then(() => {
             if (activeTab === 'recents') {
               fetchMedia();
@@ -2126,6 +2506,14 @@
         const t = setTimeout(() => { setDebSearch(search); setPage(1); }, 380);
         return () => clearTimeout(t);
       }, [search]);
+
+      // Clear the (debounced) search term immediately when switching tabs, so a
+      // leftover query doesn't filter the new tab's list until the next refresh.
+      // Also drop old global-search results so they can't bleed into other tabs.
+      useEffect(() => {
+        setDebSearch('');
+        if (activeTab !== 'search') setSearchResults({live:[], movies:[], series:[]});
+      }, [activeTab]);
 
       useEffect(() => {
         if (!authState.checked) return;
@@ -2422,7 +2810,14 @@
         } catch(e) { toast('Connection error', 'error'); }
       };
 
-      const handleWatch = (item, type, episodeTitle=null, episodeUrl=null, customPlaylist=null, customIndex=-1) => {
+      const handleWatch = (item, type, episodeTitle=null, episodeUrl=null, customPlaylist=null, customIndex=-1, force=false) => {
+        // Something is already playing in Picture-in-Picture — ask first.
+        if (pipActive && !force) {
+          setDetailItem(null);
+          setSeriesItem(null);
+          setPendingPlay([item, type, episodeTitle, episodeUrl, customPlaylist, customIndex]);
+          return;
+        }
         let title = item.name;
         let url = '';
         let streamId = item.stream_id || item.series_id || item.id;
@@ -2494,6 +2889,9 @@
       };
 
       const fetchMedia = async (attempt = 0) => {
+        // Tag this request; if a newer one starts, this one's results are ignored.
+        const seq = ++fetchSeqRef.current;
+        const stale = () => seq !== fetchSeqRef.current;
         setItems([]);
         setTotal(0);
         setLoading(true);
@@ -2509,8 +2907,10 @@
               return;
             }
             const r = await apiFetch(`/api/search?q=${encodeURIComponent(debSearch)}`);
+            if (stale()) return;
             if (r.ok) {
               const d = await r.json();
+              if (stale()) return;
               setSearchResults(d);
               const totalMatches = (d.live?.length || 0) + (d.movies?.length || 0) + (d.series?.length || 0);
               setTotal(totalMatches);
@@ -2525,8 +2925,10 @@
           } else if (activeTab === 'favorites' || activeTab === 'recents' || activeTab === 'library') {
             const endpoint = activeTab === 'library' ? '/api/library' : `/api/${activeTab}`;
             const r = await apiFetch(endpoint);
+            if (stale()) return;
             if (r.ok) {
               const d = await r.json();
+              if (stale()) return;
               const rawItems = d.items || [];
               let filtered = rawItems;
               if (debSearch) {
@@ -2552,8 +2954,10 @@
               params.set('sort_by', sortFilter);
             }
             const r = await apiFetch(`/api/${ep}?${params}`);
+            if (stale()) return;
             if (r.ok) {
               const d = await r.json();
+              if (stale()) return;
               const list = d.movies||d.series||d.channels||[];
               // Provider sometimes returns nothing on a transient hiccup — auto-retry
               // a couple of times (bypassing the empty result) before showing "empty".
@@ -2572,12 +2976,13 @@
             }
           }
         } catch(e) {
+          if (stale()) return;
           setItems([]);
           setTotalPages(1);
           setTotal(0);
           toast(`Error loading ${activeTab}`,'error');
         }
-        finally { if (!willRetry) setLoading(false); }
+        finally { if (!willRetry && !stale()) setLoading(false); }
       };
 
       const fetchDownloads = async () => { try { const r=await apiFetch('/api/downloads'); if(r.ok){const d=await r.json();setDownloads(d.downloads||[]);} } catch(e){} };
@@ -2656,6 +3061,15 @@
           const r = await apiFetch('/api/download', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type:mediaType,id,filename:clean,limit_bytes:limitBytes})});
           if (r.ok) { toast(`⬇ Download started: ${clean}`,'success'); fetchDownloads(); }
           else toast('Download failed','error');
+        } catch(e) { toast('Connection error','error'); }
+      };
+
+      const handleDownloadSeries = async (seriesName, episodes) => {
+        if (!episodes || !episodes.length) { toast('No episodes to download','info'); return; }
+        try {
+          const r = await apiFetch('/api/download-series', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({series_name:seriesName, episodes})});
+          if (r.ok) { toast(`⬇ Queued ${episodes.length} episodes — downloading one by one`,'success'); fetchDownloads(); }
+          else toast('Failed to start series download','error');
         } catch(e) { toast('Connection error','error'); }
       };
 
@@ -2851,10 +3265,10 @@
           h('form', {onSubmit:handleLogin, style:{background:'var(--bg-card)',border:'1px solid var(--border)',borderRadius:'var(--radius-lg)',boxShadow:'var(--shadow-lg)',padding:'2rem',width:'min(380px,100%)',display:'flex',flexDirection:'column',gap:'1rem'}},
             h('div', {style:{textAlign:'center',fontSize:'2.5rem'}}, '🔒'),
             h('h2', {style:{textAlign:'center',margin:0,color:'var(--text-main)',fontSize:'1.2rem'}}, 'Elamir Media Hub'),
-            h('p', {style:{textAlign:'center',margin:0,color:'var(--text-sub)',fontSize:'0.85rem'}}, 'Enter the access password to continue'),
-            h('input', {className:'form-input',type:'password',value:loginPw,autoFocus:true,placeholder:'Password',onChange:e=>{setLoginPw(e.target.value);setLoginErr('');}}),
+            h('p', {style:{textAlign:'center',margin:0,color:'var(--text-sub)',fontSize:'0.85rem'}}, t('lockPrompt')),
+            h('input', {className:'form-input',type:'password',value:loginPw,autoFocus:true,placeholder:t('password'),onChange:e=>{setLoginPw(e.target.value);setLoginErr('');}}),
             loginErr && h('div', {style:{color:'var(--red)',fontSize:'0.82rem',textAlign:'center'}}, loginErr),
-            h('button', {type:'submit',className:'btn btn-indigo',style:{width:'100%'}}, 'Unlock')
+            h('button', {type:'submit',className:'btn btn-indigo',style:{width:'100%'}}, t('unlock'))
           )
         );
       }
@@ -2894,6 +3308,14 @@
                 }
               }, `📅 Expiry: ${creds.exp_date}`),
               activeDls.length > 0 && h('span', {style:{fontSize:'0.8rem',fontWeight:700,color:'var(--indigo)',padding:'0.3rem 0.6rem',background:'hsla(242,80%,58%,0.1)',borderRadius:'var(--radius-md)',marginRight:'0.5rem'}},`⬇ ${activeDls.length}`),
+              h('select', {
+                className:'cat-select', value:lang, onChange:e=>setLang(e.target.value),
+                title:t('language'), style:{marginRight:'0.5rem',padding:'0.3rem 0.5rem'}
+              },
+                h('option', {value:'en'}, '🇬🇧 EN'),
+                h('option', {value:'ar'}, '🇸🇦 عربي'),
+                h('option', {value:'fr'}, '🇫🇷 FR')
+              ),
               h('button', {
                 className:'btn btn-ghost btn-sm',
                 onClick:()=>setTheme(t => t === 'dark' ? 'light' : 'dark'),
@@ -2901,22 +3323,22 @@
                 style:{marginRight:'0.5rem'}
               }, theme === 'dark' ? '☀️' : '🌙'),
               h('button', {className:'btn btn-ghost btn-sm', onClick:toggleSettings},
-                showSettings ? '✕ Close' : '⚙️ Settings'
+                showSettings ? '✕ ' + t('close') : '⚙️ ' + t('settings')
               )
             )
           ),
           h('div', {className:'nav-row-2'},
             h('div', {className:'nav-tabs'},
-              h('button', {className:`nav-tab ${activeTab==='movies'?'active':''}`, onClick:()=>{setActiveTab('movies');setPage(1);setSearch('');setSortFilter('');}}, '🎬 Movies'),
-              h('button', {className:`nav-tab ${activeTab==='series'?'active':''}`, onClick:()=>{setActiveTab('series');setPage(1);setSearch('');setSortFilter('');}}, '📺 TV Shows'),
+              h('button', {className:`nav-tab ${activeTab==='movies'?'active':''}`, onClick:()=>{setActiveTab('movies');setPage(1);setSearch('');setSortFilter('');}}, '🎬 ' + t('movies')),
+              h('button', {className:`nav-tab ${activeTab==='series'?'active':''}`, onClick:()=>{setActiveTab('series');setPage(1);setSearch('');setSortFilter('');}}, '📺 ' + t('series')),
               h('button', {className:`nav-tab live-tab ${activeTab==='live'?'active':''}`, onClick:()=>{setActiveTab('live');setPage(1);setSearch('');setSortFilter('');}},
-                h('div', {className:'live-dot'}), 'Live TV'
+                h('div', {className:'live-dot'}), t('liveLabel')
               ),
-              h('button', {className:`nav-tab ${activeTab==='favorites'?'active':''}`, onClick:()=>{setActiveTab('favorites');setPage(1);setSearch('');setSortFilter('');}}, '❤️ Favorites'),
-              h('button', {className:`nav-tab ${activeTab==='recents'?'active':''}`, onClick:()=>{setActiveTab('recents');setPage(1);setSearch('');setSortFilter('');}}, '🕒 Recent'),
-              h('button', {className:`nav-tab ${activeTab==='library'?'active':''}`, onClick:()=>{setActiveTab('library');setPage(1);setSearch('');setSortFilter('');}}, '📂 My Library'),
-              h('button', {className:`nav-tab ${activeTab==='search'?'active':''}`, onClick:()=>{setActiveTab('search');setPage(1);setSearch('');setSortFilter('');}}, '🔍 Global Search'),
-              h('button', {className:`nav-tab ${activeTab==='multiview'?'active':''}`, onClick:()=>{setActiveTab('multiview');setPage(1);setSearch('');setSortFilter('');}}, '🖥️ Multi-View')
+              h('button', {className:`nav-tab ${activeTab==='favorites'?'active':''}`, onClick:()=>{setActiveTab('favorites');setPage(1);setSearch('');setSortFilter('');}}, '❤️ ' + t('favorites')),
+              h('button', {className:`nav-tab ${activeTab==='recents'?'active':''}`, onClick:()=>{setActiveTab('recents');setPage(1);setSearch('');setSortFilter('');}}, '🕒 ' + t('recent')),
+              h('button', {className:`nav-tab ${activeTab==='library'?'active':''}`, onClick:()=>{setActiveTab('library');setPage(1);setSearch('');setSortFilter('');}}, '📂 ' + t('library')),
+              h('button', {className:`nav-tab ${activeTab==='search'?'active':''}`, onClick:()=>{setActiveTab('search');setPage(1);setSearch('');setSortFilter('');}}, '🔍 ' + t('search')),
+              h('button', {className:`nav-tab ${activeTab==='multiview'?'active':''}`, onClick:()=>{setActiveTab('multiview');setPage(1);setSearch('');setSortFilter('');}}, '🖥️ ' + t('multiview'))
             ),
             h('div', {className:'nav-search-filter', style:{margin:0}},
               activeTab !== 'multiview' && h('div', {className:'search-wrap'},
@@ -2924,25 +3346,25 @@
                 h('input', {
                   className:'search-input',
                   type:'text',
-                  placeholder: activeTab === 'search' ? 'Search movies, series, channels...' : `Search ${activeTab==='live'?'channels':activeTab}...`,
+                  placeholder: activeTab === 'search' ? t('searchGlobalPlaceholder') : t('searchPlaceholder'),
                   value:search,
                   onChange:e=>setSearch(e.target.value)
                 })
               ),
-              activeTab === 'live' && h('div', {className:'search-wrap', style:{maxWidth:'150px'}},
+              activeTab === 'live' && h('div', {className:'search-wrap chan-goto'},
                 h('span', {className:'search-icon', style:{fontWeight:800,fontSize:'1rem',color:'var(--indigo)'}}, '#'),
                 h('input', {
                   className:'search-input',
                   type:'number',
                   inputMode:'numeric',
-                  placeholder:'Go to #',
+                  placeholder:t('goto'),
                   value:chanNum,
                   onChange:e=>setChanNum(e.target.value),
                   onKeyDown:e=>{ if(e.key==='Enter') goToChannel(); }
                 })
               ),
               catOptions.length > 0 && h('select', {className:'cat-select',value:catFilter,onChange:e=>{setCatFilter(e.target.value);setPage(1);}},
-                h('option', {value:''}, 'All Categories'),
+                h('option', {value:''}, t('allCategories')),
                 catOptions.map(c => h('option', {key:c.category_id, value:String(c.category_id)}, c.category_name))
               ),
               (activeTab === 'movies' || activeTab === 'series') && h('select', {
@@ -3298,6 +3720,51 @@
                 )
               ),
 
+              // DNS Section (bypass ISP blocking of the IPTV provider)
+              h('div', {style:{borderTop:'1px solid var(--border)',paddingTop:'1rem',marginTop:'1rem'}},
+                h('h4', {style:{fontSize:'0.85rem',fontWeight:700,marginBottom:'0.25rem'}}, '🌐 DNS'),
+                h('p', {style:{fontSize:'0.72rem',color:'var(--text-sub)',marginBottom:'0.7rem'}},
+                  'Switch DNS to bypass ISP blocking/throttling of your IPTV provider.' +
+                  (dnsInfo && dnsInfo.system && dnsInfo.system.length ? ' — Current system DNS: ' + dnsInfo.system.join(', ') : '')),
+                h('div', {style:{marginBottom:'0.8rem'}},
+                  h('div', {style:{fontSize:'0.75rem',fontWeight:700,color:'var(--text-sub)',marginBottom:'0.35rem'}}, '💻 Whole system (needs Admin)'),
+                  h('div', {style:{display:'flex',gap:'0.4rem',flexWrap:'wrap'}},
+                    [['auto','Auto'],['cloudflare','Cloudflare'],['google','Google'],['adguard','AdGuard'],['quad9','Quad9']].map(o =>
+                      h('button', {key:o[0],type:'button',disabled:dnsBusy,
+                        className:`btn btn-sm ${dnsInfo && dnsInfo.systemProvider===o[0] ? 'btn-indigo':'btn-ghost'}`,
+                        onClick:()=>setDns('system',o[0])}, o[1]))
+                  )
+                ),
+                h('div', null,
+                  h('div', {style:{fontSize:'0.75rem',fontWeight:700,color:'var(--text-sub)',marginBottom:'0.35rem'}}, '📡 Streaming only (no Admin needed)'),
+                  h('div', {style:{display:'flex',gap:'0.4rem',flexWrap:'wrap'}},
+                    [['auto','Off'],['cloudflare','Cloudflare'],['google','Google'],['adguard','AdGuard'],['quad9','Quad9']].map(o => {
+                      const appVal = dnsInfo ? dnsInfo.app : 'off';
+                      const active = (o[0]==='auto') ? (appVal==='off') : (appVal===o[0]);
+                      return h('button', {key:o[0],type:'button',disabled:dnsBusy,
+                        className:`btn btn-sm ${active ? 'btn-indigo':'btn-ghost'}`,
+                        onClick:()=>setDns('app',o[0])}, o[1]);
+                    })
+                  )
+                )
+              ),
+
+              // Proxy / Tunnel Section (route provider traffic to bypass ISP interference)
+              h('div', {style:{borderTop:'1px solid var(--border)',paddingTop:'1rem',marginTop:'1rem'}},
+                h('h4', {style:{fontSize:'0.85rem',fontWeight:700,marginBottom:'0.25rem'}},
+                  `🛡️ Proxy / Tunnel ${proxyUrl ? '(Enabled ✓)' : '(Disabled)'}`),
+                h('p', {style:{fontSize:'0.72rem',color:'var(--text-sub)',marginBottom:'0.6rem'}},
+                  'Route all provider traffic through your proxy/VPN so the ISP only sees an encrypted connection — defeats throttling, connection resets (RST) and IP blocking.'),
+                h('div', {style:{display:'flex',gap:'0.5rem',flexWrap:'wrap',alignItems:'center'}},
+                  h('input', {className:'form-input',type:'text',value:proxyUrl,
+                    placeholder:'http://host:port  or  http://user:pass@host:port',
+                    style:{flex:'1',minWidth:'220px'},onChange:e=>setProxyUrl(e.target.value)}),
+                  h('button', {type:'button',disabled:proxyBusy,className:'btn btn-indigo',onClick:()=>saveProxy(proxyUrl)}, 'Save'),
+                  h('button', {type:'button',disabled:proxyBusy,className:'btn btn-ghost',onClick:testProxy}, 'Test'),
+                  proxyUrl && h('button', {type:'button',disabled:proxyBusy,className:'btn btn-ghost',style:{color:'var(--red)'},onClick:()=>{setProxyUrl('');saveProxy('');}}, 'Disable')
+                )
+              ),
+
               // Software Update Section
               h('div', {
                 style: {
@@ -3375,7 +3842,7 @@
           activeTab !== 'multiview' && h('div', {className:'section-bar'},
             h('div', null,
               h('h2', {className:'section-title'},
-                activeTab==='movies' ? '🎬 Movies' : activeTab==='series' ? '📺 TV Shows' : activeTab==='live' ? '📡 Live TV' : activeTab==='favorites' ? '❤️ Favorites' : activeTab==='library' ? '📂 My Library' : activeTab === 'search' ? '🔍 Global Search' : '🕒 Recent Watch History'
+                activeTab==='movies' ? t('titleMovies') : activeTab==='series' ? t('titleSeries') : activeTab==='live' ? t('titleLive') : activeTab==='favorites' ? t('titleFavorites') : activeTab==='library' ? t('titleLibrary') : activeTab === 'search' ? t('titleSearch') : t('titleRecent')
               ),
               total > 0 && h('span', {className:'section-count'}, `${total.toLocaleString()} items found`)
             ),
@@ -3393,7 +3860,7 @@
 
           // Grid or List or Custom Views
           activeTab === 'search'
-            ? h('div', { className: 'search-view' },
+            ? h('div', { key: 'view-search', className: 'search-view' },
                 !debSearch && h('div', { className: 'empty-state' },
                   h('span', { className: 'empty-state-icon' }, '🔍'),
                   h('p', null, 'Type in the search box to query movies, series, and channels globally.')
@@ -3447,7 +3914,7 @@
                 )
               )
             : activeTab === 'multiview'
-              ? h('div', { className: 'multiview-container' },
+              ? h('div', { key: 'view-multiview', className: 'multiview-container' },
                   h('div', { className: 'multiview-layout-bar' },
                     h('div', { style: { display: 'flex', gap: '0.5rem', alignItems: 'center' } },
                       h('span', { style: { fontWeight: 600, fontSize: '0.9rem' } }, 'Layout:'),
@@ -3500,10 +3967,10 @@
                   })
                 )
               : loading
-                ? h('div', {className:'spinner-wrap'}, h('div',{className:'spinner'}), h('p',{className:'spinner-label'},'Loading...'))
+                ? h('div', {key:'view-loading', className:'spinner-wrap'}, h('div',{className:'spinner'}), h('p',{className:'spinner-label'},'Loading...'))
                 : items.length > 0
                   ? activeTab === 'library'
-                    ? h('div', {className:'library-list'},
+                    ? h('div', {key:'view-library', className:'library-list'},
                         items.map(item => h(LibraryItem, {
                           key: item.name,
                           item,
@@ -3512,7 +3979,7 @@
                           onClear: () => handleClearLibrary(item)
                         }))
                       )
-                    : h('div', {className:'media-grid'},
+                    : h('div', {key:'view-grid', className:'media-grid'},
                         items.map((item, idx) => {
                           const itemType = activeTab==='movies'?'movie':activeTab==='series'?'series':activeTab==='live'?'live':(item.type || 'unknown');
                           const itemId = item.stream_id || item.series_id || item.id || `idx_${idx}`;
@@ -3560,7 +4027,7 @@
                           });
                         })
                       )
-                  : h('div', {className:'empty-state'}, h('span',{className:'empty-state-icon'},'📂'), h('p',null, activeTab === 'library' ? 'Your local library is empty.' : `No ${activeTab} found.`)),
+                  : h('div', {key:'view-empty', className:'empty-state'}, h('span',{className:'empty-state-icon'},'📂'), h('p',null, activeTab === 'library' ? t('emptyLibrary') : t('emptyGeneric'))),
           
           !['search', 'multiview'].includes(activeTab) && h(Pagination, {page, pages:totalPages, total, onPage:setPage})
         ),
@@ -3616,6 +4083,7 @@
           onToggleFav: () => toggleFavorite(seriesItem, 'series'),
           onClose:()=>setSeriesItem(null),
           onDownload:handleDownload,
+          onDownloadSeries:handleDownloadSeries,
           onSelectCategory: handleSelectCategory,
           onWatch: (idx, episodesList, seasonNum) => {
             const playlist = episodesList.map(ep => {
@@ -3629,6 +4097,7 @@
                 streamId: ep.id,
                 isLive: false,
                 type: 'series',
+                season: seasonNum,
                 rawItem: ep,
                 parentItem: seriesItem,
                 streamIcon: seriesItem.stream_icon
@@ -3654,8 +4123,74 @@
           onPrev: playPrev,
           hasNext: activePlaylist && activePlaylist.length > 1,
           hasPrev: activePlaylist && activePlaylist.length > 1,
-          activeTab: activeTab
-        })
+          activeTab: activeTab,
+          toast: toast,
+          onEnded: () => {
+            if (activePlaylist && activePlaylistIndex >= 0 && activePlaylistIndex < activePlaylist.length - 1) {
+              playPlaylistIndex(activePlaylistIndex + 1);
+            }
+          },
+          onPipChange: setPipActive
+        }),
+
+        // ── Picture-in-Picture: prompt when starting new playback while one is mini ──
+        pendingPlay && h('div', { className: 'modal-backdrop', onClick: () => setPendingPlay(null) },
+          h('div', { className: 'modal-box', onClick: e => e.stopPropagation(), style: { maxWidth: '420px' } },
+            h('div', { style: { padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' } },
+              h('div', { style: { textAlign: 'center', fontSize: '2rem' } }, '🗗'),
+              h('h3', { style: { textAlign: 'center', margin: 0, color: 'var(--text-main)', fontSize: '1.05rem' } }, 'Something is playing in Mini player'),
+              h('p', { style: { textAlign: 'center', margin: 0, color: 'var(--text-sub)', fontSize: '0.85rem' } }, `Do you want to open "${pendingPlay[0] && pendingPlay[0].name || 'this'}"?`),
+              h('div', { style: { display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' } },
+                h('button', {
+                  className: 'btn btn-indigo', style: { width: '100%' },
+                  onClick: () => {
+                    const a = pendingPlay; setPendingPlay(null); setPipActive(false);
+                    if (document.pictureInPictureElement) document.exitPictureInPicture().catch(()=>{});
+                    handleWatch(a[0], a[1], a[2], a[3], a[4], a[5], true);
+                  }
+                }, '🔄 Replace what\'s playing'),
+                h('button', {
+                  className: 'btn btn-gold', style: { width: '100%' },
+                  onClick: () => {
+                    const p = pendingPlay;
+                    // Slot for the item already playing (in the Mini player)
+                    const curSlot = playerState
+                      ? { name: playerState.title, url: playerState.url, stream_id: playerState.streamId }
+                      : null;
+                    // Slot for the newly chosen item (build its playable URL)
+                    const newName = p[2] || (p[0] && p[0].name) || 'Stream';
+                    const newUrl = p[3] || streamSrc(p[1], (p[0] && (p[0].stream_id || p[0].id)));
+                    // Close everything first so no leftover screen stays on top, and
+                    // release the current player's connection before opening the slots.
+                    setDetailItem(null);
+                    setSeriesItem(null);
+                    setPendingPlay(null);
+                    if (document.pictureInPictureElement) document.exitPictureInPicture().catch(()=>{});
+                    setPipActive(false);
+                    setPlayerState(null);
+                    setMvSlots([null, null, null, null]);
+                    setMvLayout('2');
+                    setActiveTab('multiview');
+                    setPage(1);
+                    // Mount the slots after the previous connection has been released
+                    // (avoids a transient over-limit that leaves a slot black).
+                    setTimeout(() => {
+                      const slots = [null, null, null, null];
+                      let idx = 0;
+                      if (curSlot) { slots[idx++] = curSlot; }
+                      slots[idx] = { name: newName, url: newUrl };
+                      setMvSlots(slots);
+                    }, 600);
+                  }
+                }, '🖥️ Open both in Multi-View'),
+                h('button', {
+                  className: 'btn btn-ghost', style: { width: '100%' },
+                  onClick: () => setPendingPlay(null)
+                }, 'Cancel — keep watching')
+              )
+            )
+          )
+        )
       );
     }
 
