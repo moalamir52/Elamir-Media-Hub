@@ -3409,7 +3409,7 @@
         h('nav', {className:'top-nav'},
           h('div', {className:'nav-row-1'},
             h('a', {className:'brand', href:'#'},
-              h('span', {className:'brand-icon'}, '📡'),
+              h('img', {className:'brand-icon', src:'/logo.svg', style:{width:'32px', height:'32px', objectFit:'contain'}}),
               h('div', {className:'brand-text'},
                 h('span', {className:'brand-name'}, 'Elamir Media Hub'),
                 h('span', {className:'brand-by'}, `by Mohamed Elamir ${appVersion ? '— v' + appVersion : ''}`)

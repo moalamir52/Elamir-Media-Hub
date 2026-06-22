@@ -2613,6 +2613,18 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
                 download_file("backend.py", backend_tmp)
                 download_file("index.html", index_tmp)
                 
+                # Download logo files (optional so update doesn't fail if logos aren't in repo yet)
+                logo_files = ["logo.ico", "logo.svg", "logo.png"]
+                logo_tmps = []
+                for lf in logo_files:
+                    lf_local = os.path.join(app_dir, lf)
+                    lf_tmp = lf_local + ".tmp"
+                    try:
+                        download_file(lf, lf_tmp)
+                        logo_tmps.append((lf_tmp, lf_local))
+                    except Exception as e_logo:
+                        print(f"Skipping optional logo download for {lf}: {e_logo}")
+                
                 # Verify backend.py syntax
                 try:
                     py_compile.compile(backend_tmp, doraise=True)
@@ -2653,6 +2665,14 @@ class LocalAppAPIHandler(SimpleHTTPRequestHandler):
                     try: os.remove(index_local)
                     except: pass
                 os.rename(index_tmp, index_local)
+                
+                # Swap logo files
+                for lf_tmp, lf_local in logo_tmps:
+                    if os.path.exists(lf_tmp):
+                        if os.path.exists(lf_local):
+                            try: os.remove(lf_local)
+                            except: pass
+                        os.rename(lf_tmp, lf_local)
                 
                 self.send_json({
                     "status": "success", 
