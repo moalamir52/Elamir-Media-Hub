@@ -95,41 +95,26 @@ def write_self_healing_launchers(root_dir):
     This is why some machines worked and others didn't: the pythonw path differs."""
     bat = (
         "@echo off\n"
-        "if exist \"%~dp0python_env\\\" if not exist \"%~dp0app\\python_env\\\" "
-        "robocopy \"%~dp0python_env\" \"%~dp0app\\python_env\" /E /MOVE /NFL /NDL /NJH /NJS /nc /ns /np >nul 2>&1\n"
-        "set \"PYW=\"\n"
-        "if exist \"%~dp0app\\python_env\\pythonw.exe\" set \"PYW=%~dp0app\\python_env\\pythonw.exe\"\n"
-        "if not defined PYW if exist \"%~dp0app\\python_env\\Scripts\\pythonw.exe\" set \"PYW=%~dp0app\\python_env\\Scripts\\pythonw.exe\"\n"
-        "if not defined PYW if exist \"%~dp0python_env\\pythonw.exe\" set \"PYW=%~dp0python_env\\pythonw.exe\"\n"
-        "if not defined PYW if exist \"%~dp0python_env\\Scripts\\pythonw.exe\" set \"PYW=%~dp0python_env\\Scripts\\pythonw.exe\"\n"
-        "set \"BE=%~dp0app\\backend.py\"\n"
-        "if not exist \"%BE%\" set \"BE=%~dp0backend.py\"\n"
-        "if defined PYW ( start \"\" \"%PYW%\" \"%BE%\" ) else ( start \"\" pythonw \"%BE%\" )\n"
+        "if /I not \"%~1\"==\"hidden\" (\n"
+        "    powershell -NoProfile -WindowStyle Hidden -Command \"Start-Process -FilePath '%~f0' -ArgumentList 'hidden' -WorkingDirectory '%~dp0' -WindowStyle Hidden\"\n"
+        "    exit /b\n"
+        ")\n\n"
+        "cd /d \"%~dp0\"\n\n"
+        "if not exist \"app\\python_env\\Scripts\\pythonw.exe\" (\n"
+        "    cd app\n"
+        "    python -m venv python_env\n"
+        "    python_env\\Scripts\\pip install --upgrade pip\n"
+        "    if exist \"%~dp0requirements.txt\" python_env\\Scripts\\pip install -r \"%~dp0requirements.txt\"\n"
+        ")\n\n"
+        "start \"\" \"%~dp0app\\python_env\\Scripts\\pythonw.exe\" \"%~dp0app\\backend.py\"\n"
     )
     vbs = (
         'Set WshShell = CreateObject("WScript.Shell")\n'
         'Set fso = CreateObject("Scripting.FileSystemObject")\n'
-        'q = Chr(34)\n'
         'sd = fso.GetParentFolderName(WScript.ScriptFullName)\n'
-        'If fso.FolderExists(sd & "\\python_env") And Not fso.FolderExists(sd & "\\app\\python_env") Then\n'
-        '    WshShell.Run "robocopy " & q & sd & "\\python_env" & q & " " & q & sd & "\\app\\python_env" & q & " /E /MOVE /NFL /NDL /NJH /NJS /nc /ns /np", 0, True\n'
-        'End If\n'
-        'pyw = ""\n'
-        'If fso.FileExists(sd & "\\app\\python_env\\pythonw.exe") Then\n'
-        '    pyw = sd & "\\app\\python_env\\pythonw.exe"\n'
-        'ElseIf fso.FileExists(sd & "\\app\\python_env\\Scripts\\pythonw.exe") Then\n'
-        '    pyw = sd & "\\app\\python_env\\Scripts\\pythonw.exe"\n'
-        'ElseIf fso.FileExists(sd & "\\python_env\\pythonw.exe") Then\n'
-        '    pyw = sd & "\\python_env\\pythonw.exe"\n'
-        'ElseIf fso.FileExists(sd & "\\python_env\\Scripts\\pythonw.exe") Then\n'
-        '    pyw = sd & "\\python_env\\Scripts\\pythonw.exe"\n'
-        'End If\n'
-        'be = sd & "\\app\\backend.py"\n'
-        'If Not fso.FileExists(be) Then be = sd & "\\backend.py"\n'
-        'If pyw <> "" Then\n'
-        '    WshShell.Run q & pyw & q & " " & q & be & q, 0, False\n'
-        'Else\n'
-        '    WshShell.Run "pythonw " & q & be & q, 0, False\n'
+        'bat = sd & "\\Elamir-Media-Hub.bat"\n'
+        'If fso.FileExists(bat) Then\n'
+        '    WshShell.Run "cmd.exe /c " & Chr(34) & bat & Chr(34), 0, False\n'
         'End If\n'
     )
     try:
@@ -312,7 +297,7 @@ def get_cache_dir():
     os.makedirs(cache_dir, exist_ok=True)
     return cache_dir
 
-VERSION = "2.2"
+VERSION = "2.2.1"
 
 # Global Configurations & Cache
 CONFIG_FILE = os.path.join(get_base_dir(), "config.json")
